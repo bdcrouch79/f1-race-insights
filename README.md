@@ -17,3 +17,22 @@ Ergast F1 API
 Example:
 
 python main.py
+
+---
+
+Crouch Development  
+Systems. Strategy. Execution.
+
+This repository is part of an ongoing set of technical experiments and
+architecture explorations conducted under the Crouch Development umbrella.
+
+These projects are intentionally lightweight and are used to explore:
+
+• systems thinking  
+• automation architecture  
+• operational analytics  
+• applied AI workflows  
+• execution systems
+
+https://crouchdevelopment.com
+
