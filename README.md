@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/cd-mark.png" width="90">
+</p>
 # F1 Race Insights
 
 Small data engineering project exploring Formula 1 race data.
@@ -35,4 +38,5 @@ These projects are intentionally lightweight and are used to explore:
 • execution systems
 
 https://crouchdevelopment.com
+
 
