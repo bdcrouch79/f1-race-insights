@@ -1,1 +1,22 @@
 /cache/
+
+# Node / Next.js (apps/web)
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editors / OS
+.DS_Store
+.vscode/
+
+# Env files (secrets never committed)
+.env
+.env.local
+.env*.local
