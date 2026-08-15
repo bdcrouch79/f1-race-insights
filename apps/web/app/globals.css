@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background-color: #08090b;
+}
+
+body {
+  background-color: #08090b;
+  color: #f4f6f8;
+  font-feature-settings: "tnum" 0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.riq-container {
+  width: 100%;
+  max-width: 76rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.riq-panel {
+  background-color: #1a1e24;
+  border: 1px solid rgba(140, 148, 159, 0.16);
+  border-radius: 10px;
+}
+
+.riq-divider {
+  border-color: rgba(140, 148, 159, 0.16);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .riq-hover-lift {
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+  .riq-hover-lift:hover {
+    transform: translateY(-2px);
+    border-color: rgba(48, 213, 255, 0.4);
+  }
+}
