@@ -2,122 +2,98 @@
   <img src="assets/cd-mark.png" width="90">
 </p>
 
-# F1 Race Insights
+# RaceIQ
 
-**A motorsport analytics lab exploring race performance, strategy, and driver behavior through data.**
+**RaceIQ reveals the pace, consistency, degradation, and performance patterns that shaped a
+Formula 1 race, beyond the finishing order.**
 
-F1 Race Insights is a small motorsport analytics lab focused on turning race-session data into fast, visual performance studies.
+RaceIQ is a public motorsport intelligence application built by Bryan Crouch under
+[Crouch Development](https://crouchdevelopment.com). It grew out of this repository's original
+lab, [F1 Race Insights](docs/origin.md) -- a small analytics study built with FastF1, pandas,
+matplotlib, and seaborn -- into a production application without discarding that lab's working
+analysis.
 
-It is intentionally lean: one script, a clear output set, and a bias toward insight over ceremony.
+RaceIQ is independent and not affiliated with Formula 1, the FIA, any team, or any driver.
 
-## What This Is
+## What RaceIQ does
 
-This repository explores Formula 1 race data through a compact analysis workflow built with FastF1, pandas, matplotlib, and seaborn.
+1. A visitor selects a historical season and Grand Prix.
+2. RaceIQ's Python engine loads the FastF1 race session and computes four verified metrics:
+   average race pace, lap-time trends, driver consistency, and an opening-versus-closing pace
+   degradation heuristic.
+3. The engine returns a versioned, structured JSON contract.
+4. The Next.js frontend renders that contract as an interactive dashboard with an evidence-based
+   summary, and offers one shareable social insight card per analysis.
 
-The current implementation pulls a race session, filters to representative quick laps, calculates a handful of pace metrics, and exports charts that make the race easier to read at a glance.
+RaceIQ is a **historical race analysis engine**, not a simulator: it does not predict or model
+alternative race outcomes.
 
-This is not positioned as a production application. It is a lab environment: a place to test motorsport questions, compare drivers, and develop visual analysis patterns that can evolve into richer tooling later.
+## Repository layout
 
-## Why It's Interesting
-
-Motorsport data sits at the intersection of engineering, strategy, and storytelling.
-
-Even a small slice of race timing data can reveal:
-
-- who truly had underlying pace
-- who managed consistency best
-- which front-runners faded across the run
-- how race shape appears when reduced to visual patterns instead of raw tables
-
-That combination makes Formula 1 a strong playground for analytics work: the domain is technical, the patterns are visible, and the output is immediately interpretable.
-
-## Data Sources
-
-This project currently uses:
-
-- FastF1 for race session timing and lap data
-- FastF1's local cache for repeatable, faster reruns
-
-The active example in `main.py` analyzes the 2024 Monaco Grand Prix race session.
-
-For a more detailed walkthrough of the process, see [docs/methodology.md](/C:/dev/f1-race-insights/docs/methodology.md).
-
-## Example Analysis
-
-The current output set focuses on four views of the same race:
-
-### Average Driver Pace
-
-![Average Driver Pace](charts/monaco_2024_driver_pace.png)
-
-### Lap Time Trends
-
-![Lap Time Trends](charts/monaco_2024_lap_trends.png)
-
-### Driver Consistency
-
-![Driver Consistency](charts/monaco_2024_consistency.png)
-
-### Pace Degradation
-
-![Pace Degradation](charts/monaco_2024_degradation.png)
-
-## What This Shows
-
-Taken together, these charts provide a compact reading of race performance:
-
-- average pace shows the broad competitive order
-- lap trends show how leading drivers behaved over time
-- consistency highlights smooth versus noisy race execution
-- degradation gives a quick signal for end-of-run fade
-
-The result is less about one headline number and more about building a layered picture of how a race unfolded.
-
-## Run Locally
-
-Install the existing dependencies and run the script:
-
-```bash
-pip install -r requirements.txt
-python main.py
+```text
+analysis/raceiq/    Python analysis engine -- callable, tested, versioned contract
+analysis/tests/      pytest suite (synthetic fixtures, no live network calls required)
+scripts/             generate_analysis.py (real sessions), generate_demo_fixture.py (synthetic)
+data/generated/      committed real analysis JSON artifacts
+data/fixtures/       synthetic fixtures for tests and the interface-verification demo route
+apps/web/            Next.js App Router frontend (TypeScript, Tailwind CSS, Apache ECharts)
+docs/                product, architecture, methodology, and operating documentation
 ```
 
-Outputs are written to:
+See [`AGENTS.md`](AGENTS.md) for the full agent operating contract and
+[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) for exactly what is implemented, verified, and
+blocked right now.
 
-- `charts/`
-- `cache/`
+## Data source and historical coverage
 
-## Future Direction
+RaceIQ is built on [FastF1](https://github.com/theOehrly/Fast-F1). FastF1 documents reliable lap
+timing, telemetry, and car data from the **2018 season onward**; earlier seasons only have
+schedule and classification data, with no lap-by-lap timing. RaceIQ's four analysis views are
+therefore only available for 2018 and later. See
+[`docs/DATA_AVAILABILITY.md`](docs/DATA_AVAILABILITY.md) for the full, sourced coverage matrix --
+do not publish a broader historical claim without re-verifying it there first.
 
-This repo is a foundation for broader motorsport analysis work. Natural next steps include:
+## Run the Python engine locally
 
-- multi-race comparisons across circuits and seasons
-- stint-aware pace modeling
-- tire-compound overlays
-- safety-car and traffic segmentation
-- richer telemetry-derived views
-- driver-versus-teammate benchmarking
+```bash
+cd analysis
+pip install -r requirements.txt
+python3 -m pytest -q                                  # engine test suite (no network required)
+python3 ../scripts/generate_analysis.py 2024 Monaco    # real session -> data/generated/
+```
 
-The lab is small on purpose, but the direction is expansive.
+The original lab script (`python main.py`, using `requirements.txt` at the repository root) still
+works unchanged and remains useful for quick local chart exploration; it is not part of the
+production RaceIQ path. See [`docs/origin.md`](docs/origin.md) for that lab's background.
 
-## Philosophy
+## Run the frontend locally
 
-Good analytics projects do not need to be bloated to be serious.
+```bash
+cd apps/web
+npm install
+npm run dev      # http://localhost:3000
+npm run test
+npm run build
+```
 
-This repository favors a different posture:
+The frontend reads precomputed analysis JSON from `data/generated/` and `data/fixtures/` -- it
+does not call FastF1 directly. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for why.
 
-- start with clean questions
-- use minimal tooling
-- produce charts that carry real explanatory weight
-- leave room for iteration instead of pretending the first pass is the final system
+## Documentation
 
-F1 Race Insights is designed to feel like an active research bench for motorsport performance, not just a script that happens to save a few PNGs.
+- [`docs/PRODUCT.md`](docs/PRODUCT.md) -- what RaceIQ is and who it's for
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) -- system design and deployment architecture
+- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) -- how every metric is calculated
+- [`docs/DATA_AVAILABILITY.md`](docs/DATA_AVAILABILITY.md) -- verified historical coverage matrix
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) -- implementation and deployment state
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) -- what's next, explicitly out of scope for Phase 1
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) -- durable architecture and stack decisions
+- [`docs/OFFER.md`](docs/OFFER.md) -- commercial framing (currently free, audience-building)
+- [`docs/GROWTH.md`](docs/GROWTH.md) -- distribution and the RaceIQ Weekend Brief
+- [`docs/CONTENT_ENGINE.md`](docs/CONTENT_ENGINE.md) -- future content outputs, all metric-traceable
 
 ---
 
-Crouch Development  
+Crouch Development
 Systems. Strategy. Execution.
-
-This repository is part of an ongoing set of technical experiments and architecture explorations conducted under the Crouch Development umbrella.
-
 https://crouchdevelopment.com
