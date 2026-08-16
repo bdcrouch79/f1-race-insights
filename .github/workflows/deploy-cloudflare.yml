@@ -61,8 +61,12 @@ jobs:
       # step only runs once BREVO_API_KEY exists as a repo secret; until
       # then the Weekend Brief route keeps failing safely with HTTP 503.
       - name: Sync BREVO_API_KEY to the Worker's runtime secrets
-        if: ${{ secrets.BREVO_API_KEY != '' }}
-        run: echo "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+        run: |
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "BREVO_API_KEY not set -- skipping Worker secret sync."
+          else
+            echo "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+          fi
         env:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
