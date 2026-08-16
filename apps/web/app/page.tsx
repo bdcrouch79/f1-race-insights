@@ -38,10 +38,13 @@ export default function HomePage() {
     : DEMO_FIXTURE_ROUTE;
   const isFeaturedSample = !featured;
   const driverInfo = featuredAnalysis ? buildDriverInfo(featuredAnalysis.drivers) : {};
-  const knownEventsBySeason = generated.reduce<Record<string, string[]>>((acc, { year, eventSlug }) => {
-    (acc[year] ??= []).push(eventSlug);
-    return acc;
-  }, {});
+  const knownEventsBySeason = generated.reduce<Record<string, { slug: string; name: string }[]>>(
+    (acc, { year, eventSlug, analysis }) => {
+      (acc[year] ??= []).push({ slug: eventSlug, name: analysis.event.name });
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div>

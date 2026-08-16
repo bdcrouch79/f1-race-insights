@@ -15,52 +15,43 @@ afterEach(() => {
 });
 
 describe("SeasonRaceSelector", () => {
-  it("renders a season select and an event input", () => {
+  it("renders a season select and an event select", () => {
     render(<SeasonRaceSelector />);
     expect(screen.getByLabelText("Season")).toBeTruthy();
     expect(screen.getByLabelText("Grand Prix")).toBeTruthy();
   });
 
-  it("navigates to the slugified race route on submit", () => {
-    render(<SeasonRaceSelector />);
-
-    fireEvent.change(screen.getByLabelText("Grand Prix"), { target: { value: "Monaco Grand Prix" } });
-    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
-
-    expect(push).toHaveBeenCalledTimes(1);
-    const [path] = push.mock.calls[0] as [string];
-    expect(path).toMatch(/^\/race\/\d{4}\/monaco-grand-prix$/);
-  });
-
-  it("resolves a partial query against a known event slug for the selected season", () => {
+  it("defaults to a season that actually has generated races, not the current year", () => {
     const currentYear = new Date().getFullYear();
-    render(<SeasonRaceSelector knownEventsBySeason={{ [String(currentYear)]: ["monaco-grand-prix"] }} />);
-
-    fireEvent.change(screen.getByLabelText("Grand Prix"), { target: { value: "monaco" } });
-    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
-
-    expect(push).toHaveBeenCalledTimes(1);
-    const [path] = push.mock.calls[0] as [string];
-    expect(path).toBe(`/race/${currentYear}/monaco-grand-prix`);
-  });
-
-  it("falls back to the raw slug when no known event matches, instead of guessing ambiguously", () => {
-    const currentYear = new Date().getFullYear();
+    const dataYear = String(currentYear - 2);
     render(
-      <SeasonRaceSelector
-        knownEventsBySeason={{ [String(currentYear)]: ["japanese-grand-prix", "abu-dhabi-grand-prix"] }}
-      />,
+      <SeasonRaceSelector knownEventsBySeason={{ [dataYear]: [{ slug: "monaco-grand-prix", name: "Monaco Grand Prix" }] }} />,
     );
 
-    fireEvent.change(screen.getByLabelText("Grand Prix"), { target: { value: "monaco" } });
-    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
-
-    const [path] = push.mock.calls[0] as [string];
-    expect(path).toBe(`/race/${currentYear}/monaco`);
+    expect((screen.getByLabelText("Season") as HTMLSelectElement).value).toBe(dataYear);
+    expect((screen.getByLabelText("Grand Prix") as HTMLSelectElement).value).toBe("monaco-grand-prix");
   });
 
-  it("does not navigate when the event field is empty", () => {
+  it("navigates to the real race route for the selected event -- every option is a real report", () => {
+    const currentYear = new Date().getFullYear();
+    const dataYear = String(currentYear - 2);
+    render(
+      <SeasonRaceSelector knownEventsBySeason={{ [dataYear]: [{ slug: "monaco-grand-prix", name: "Monaco Grand Prix" }] }} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
+
+    expect(push).toHaveBeenCalledTimes(1);
+    const [path] = push.mock.calls[0] as [string];
+    expect(path).toBe(`/race/${dataYear}/monaco-grand-prix`);
+  });
+
+  it("disables the event select and the Analyze button when the selected season has no generated races", () => {
     render(<SeasonRaceSelector />);
+
+    expect((screen.getByLabelText("Grand Prix") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Analyze" }) as HTMLButtonElement).disabled).toBe(true);
+
     fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
     expect(push).not.toHaveBeenCalled();
   });
