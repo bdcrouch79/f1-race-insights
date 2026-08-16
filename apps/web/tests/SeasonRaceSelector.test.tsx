@@ -46,6 +46,18 @@ describe("SeasonRaceSelector", () => {
     expect(path).toBe(`/race/${dataYear}/monaco-grand-prix`);
   });
 
+  it("only lists seasons that have a generated race, not the full supported range", () => {
+    const currentYear = new Date().getFullYear();
+    const dataYear = String(currentYear - 2);
+    render(
+      <SeasonRaceSelector knownEventsBySeason={{ [dataYear]: [{ slug: "monaco-grand-prix", name: "Monaco Grand Prix" }] }} />,
+    );
+
+    const seasonSelect = screen.getByLabelText("Season") as HTMLSelectElement;
+    const optionValues = Array.from(seasonSelect.options).map((o) => o.value);
+    expect(optionValues).toEqual([dataYear]);
+  });
+
   it("disables the event select and the Analyze button when the selected season has no generated races", () => {
     render(<SeasonRaceSelector />);
 

@@ -32,6 +32,11 @@ export function SeasonRaceSelector({ knownEventsBySeason = {} }: SeasonRaceSelec
     () => SEASONS.filter((year) => (knownEventsBySeason[String(year)]?.length ?? 0) > 0),
     [knownEventsBySeason],
   );
+  // Only offer seasons that actually have a generated race -- a dropdown
+  // full of options that immediately disable the rest of the form isn't
+  // a real picker. Falls back to the full range only in the (currently
+  // hypothetical) case where nothing has been generated anywhere yet.
+  const seasonOptions = seasonsWithData.length > 0 ? seasonsWithData : SEASONS;
   const [season, setSeason] = useState(seasonsWithData[0] ?? SEASONS[0]);
   const events = knownEventsBySeason[String(season)] ?? [];
   const [event, setEvent] = useState(events[0]?.slug ?? "");
@@ -62,7 +67,7 @@ export function SeasonRaceSelector({ knownEventsBySeason = {} }: SeasonRaceSelec
           onChange={(e) => handleSeasonChange(Number(e.target.value))}
           className="w-full rounded-md border riq-divider bg-riq-graphite px-3 py-2 text-sm text-riq-white focus:border-riq-cyan focus:outline-none"
         >
-          {SEASONS.map((year) => (
+          {seasonOptions.map((year) => (
             <option key={year} value={year}>
               {year}
               {knownEventsBySeason[String(year)]?.length ? "" : " (none generated yet)"}
