@@ -84,6 +84,18 @@ npm run build
 The frontend reads precomputed analysis JSON from `data/generated/` and `data/fixtures/` -- it
 does not call FastF1 directly. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for why.
 
+## Deploy to Cloudflare
+
+```bash
+cd apps/web
+npm run cf:build     # build and verify the Cloudflare Worker bundle locally
+npm run cf:deploy    # build and deploy (needs `wrangler login` or CLOUDFLARE_API_TOKEN)
+```
+
+`.github/workflows/deploy-cloudflare.yml` does this automatically on push to `main`, given
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets. See
+[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) for the exact steps to create and add them.
+
 ## Documentation
 
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) -- what RaceIQ is and who it's for

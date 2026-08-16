@@ -88,28 +88,47 @@ reading the output rather than trusting the arithmetic:
 
 ## Not verified / blocked
 
-- **No deployment exists.** Frontend provider: intended Cloudflare (`raceiq-web`,
-  `raceiq.crouchdevelopment.com`), consistent with other current Crouch Development properties,
-  but no Cloudflare project has been created or connected. Analysis provider: none (see
-  `docs/ARCHITECTURE.md` -- Phase 1 uses precomputed artifacts, not a hosted Python service).
-  - **Next action**: Bryan decides and creates the Cloudflare Pages/Workers project (or confirms a
-    different provider), connects this repository, and only then is DNS/domain attachment
-    considered -- per Bryan OS stop conditions, none of that was done automatically here.
+- **Not actually deployed yet, but the deployment path is built and build-verified.**
+  `apps/web` has real, tested Cloudflare Workers deployment tooling (`wrangler.jsonc`,
+  `open-next.config.ts`, `npm run cf:build`/`cf:deploy`, `.github/workflows/
+  deploy-cloudflare.yml`) targeting Worker name `raceiq-web`. `npm run cf:build` succeeds locally
+  and `npx wrangler deploy --dry-run` validates the complete asset bundle (62 files, ~8.6 MB) --
+  see `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` (2026-08-16) for the two real build bugs
+  found and fixed getting here. What's missing is credentials: this session has read-only
+  Cloudflare account access (confirmed via the account's Workers list: `raceiq-web` doesn't exist
+  yet) but no deploy token, and creating one is Bryan's action.
+  - **Next action** (about 5 minutes): 
+    1. In the Cloudflare dashboard: **My Profile → API Tokens → Create Token → Edit Cloudflare
+       Workers** template (or a custom token scoped to Workers Scripts:Edit for the account).
+    2. Copy the token, and find the Account ID on the Cloudflare dashboard's Workers & Pages
+       overview page (right-hand sidebar).
+    3. In the GitHub repo: **Settings → Secrets and variables → Actions → New repository secret**
+       -- add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` with those two values.
+    4. Merge this branch to `main` (or push directly to `main` once merged), or trigger the
+       **Deploy RaceIQ to Cloudflare** workflow manually from the Actions tab
+       (`workflow_dispatch`). It builds, tests, and deploys automatically; the job fails fast with
+       a clear message if either secret is missing.
+    5. The result is live at `https://raceiq-web.<your-account-subdomain>.workers.dev` --
+       Cloudflare shows the account subdomain on the same Workers & Pages overview page. Attaching
+       `raceiq.crouchdevelopment.com` is a separate, explicit step after that (Cloudflare
+       dashboard: the Worker's Settings → Domains & Routes → Add Custom Domain) -- the deploy
+       workflow does not touch DNS or custom domains at all, by design.
 - **RaceIQ Weekend Brief signup is code-complete but not connected.** `BREVO_API_KEY` is not
   configured; the route (`apps/web/app/api/subscribe/route.ts`) fails safely with HTTP 503 and a
   clear message, with no partial side effects. The Brevo list ID for "RaceIQ Weekend Brief" has not
   been created or verified.
   - **Next action**: Bryan creates the Brevo list, verified sender (`media@crouchdevelopment.com`),
-    and the `RACEIQ_*` contact attributes in Brevo; then the `BREVO_API_KEY` secret is added to the
-    hosting platform (never committed) and the list ID is wired into the route.
-- **Social card on Cloudflare**: verified working under `next build` + `next start` (Node.js). Not
-  yet verified on Cloudflare Workers, where `node:fs` access to the repository's `data/**` may not
-  resolve at request time -- see the risk and fallback plan in `docs/ARCHITECTURE.md`.
+    and the `RACEIQ_*` contact attributes in Brevo; adds `BREVO_API_KEY` as a GitHub repository
+    secret (same place as the Cloudflare secrets above) -- the deploy workflow then automatically
+    syncs it to the Worker's runtime secrets on the next deploy; and the Brevo list ID gets wired
+    into the route in a follow-up change.
 
 ## Deployment state
 
-- **Frontend provider**: none yet (intended: Cloudflare Workers/Pages).
-- **Production domain**: none attached (intended: `raceiq.crouchdevelopment.com`).
+- **Frontend provider**: Cloudflare Workers, tooling built and build-verified; not yet actually
+  deployed (no API token configured yet -- see above).
+- **Production domain**: none attached (target: `raceiq.crouchdevelopment.com`, attached only after
+  a first successful deploy is verified on the `*.workers.dev` subdomain).
 - **Analysis provider**: none (precomputed artifacts committed to this repository; see
   `docs/ARCHITECTURE.md`).
 - **Email**: Resend/Microsoft 365 conventions from Bryan OS not yet applied to RaceIQ; only the
@@ -128,10 +147,10 @@ reading the output rather than trusting the arithmetic:
    committed under `analysisVersion 1.1.1` and verified. Generate more races the same way
    (`python scripts/generate_analysis.py <year> <event>`) whenever more coverage is wanted --
    actually read the resulting summary before committing, per the three fixes above.
-2. Bryan selects and creates the Cloudflare (or alternative) hosting project for `apps/web`,
-   including verifying the `opengraph-image` route's `node:fs` behavior on that platform before
-   launch.
-3. Bryan creates the Brevo "RaceIQ Weekend Brief" list, sender, and attributes, then provides the
-   verified list ID and `BREVO_API_KEY` secret to the hosting platform.
-4. Only after 2-3: attach the `raceiq.crouchdevelopment.com` domain and flip the frontend from
-   preview to production review per `bdc-os/docs/BUILD_AND_PREVIEW_WORKFLOW.md`.
+2. ~~Build and verify Cloudflare deployment tooling.~~ Done -- see "Not verified / blocked" above.
+   Remaining: Bryan creates the Cloudflare API token and adds the two GitHub secrets, then merges
+   this branch (or triggers the workflow manually) to get a first live deploy on `*.workers.dev`.
+3. Bryan creates the Brevo "RaceIQ Weekend Brief" list, sender, and attributes, then adds
+   `BREVO_API_KEY` as a GitHub secret.
+4. Only after 2-3 are verified live: attach the `raceiq.crouchdevelopment.com` domain via the
+   Cloudflare dashboard.

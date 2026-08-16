@@ -7,6 +7,16 @@ out/
 next-env.d.ts
 *.tsbuildinfo
 
+# Cloudflare (apps/web)
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
+
+# Build-time copy of the real /data (created by Next's file tracing
+# when bundling for Cloudflare/serverless output) -- not source, never
+# committed. The real data lives at the repo root under /data.
+/apps/web/data/
+
 # Python
 __pycache__/
 *.pyc

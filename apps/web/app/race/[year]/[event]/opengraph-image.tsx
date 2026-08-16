@@ -2,12 +2,28 @@ import { ImageResponse } from "next/og";
 
 import { buildDriverInfo } from "@/lib/driverInfo";
 import { filterEligibleForHeadline } from "@/lib/headlineEligibility";
-import { resolveAnalysis } from "@/lib/raceData";
+import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/lib/raceData";
 
 export const runtime = "nodejs";
 export const alt = "RaceIQ race analysis card";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+/**
+ * Without this, Next only knows to prerender the page itself for known
+ * races (via the page's own generateStaticParams) -- this route still
+ * defaults to generating the image on demand, at request time, which
+ * needs the same node:fs access to data/** as the page. That's fine on
+ * Vercel/Node but Cloudflare Workers have no real filesystem at
+ * runtime, so an on-demand image for a real race would fail there.
+ * Mirroring generateStaticParams here bakes the image as a static file
+ * at build time instead, removing the runtime fs dependency entirely
+ * for every route this app actually ships.
+ */
+export function generateStaticParams() {
+  const generated = listGeneratedAnalyses().map(({ year, eventSlug }) => ({ year, event: eventSlug }));
+  return [...generated, { year: DEMO_FIXTURE_ROUTE.year, event: DEMO_FIXTURE_ROUTE.eventSlug }];
+}
 
 const COLORS = {
   black: "#08090B",

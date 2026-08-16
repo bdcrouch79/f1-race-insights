@@ -1,0 +1,80 @@
+name: Deploy RaceIQ to Cloudflare
+
+# Deploys to the raceiq-web Worker's *.workers.dev subdomain only.
+# Attaching the raceiq.crouchdevelopment.com custom domain is a
+# separate, deliberate step -- not something this workflow does.
+# See docs/CURRENT_STATE.md for the exact remaining manual steps.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "data/**"
+      - ".github/workflows/deploy-cloudflare.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail fast if Cloudflare credentials are not configured
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID repository secrets are not set. See docs/CURRENT_STATE.md for how to create and add them."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm install
+
+      - run: npm run typecheck
+      - run: npx eslint .
+      - run: npm run test
+      - run: npm run cf:build
+
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # BREVO_API_KEY is read at request time by /api/subscribe (see
+      # apps/web/app/api/subscribe/route.ts), so it must be a Worker
+      # runtime secret (wrangler secret put), not a build-time env var --
+      # a build-time value would never reach the deployed Worker. This
+      # step only runs once BREVO_API_KEY exists as a repo secret; until
+      # then the Weekend Brief route keeps failing safely with HTTP 503.
+      - name: Sync BREVO_API_KEY to the Worker's runtime secrets
+        if: ${{ secrets.BREVO_API_KEY != '' }}
+        run: echo "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify the deployed Worker responds
+        run: |
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://raceiq-web.${{ secrets.CLOUDFLARE_ACCOUNT_SUBDOMAIN }}.workers.dev/" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Deployed Worker returned HTTP $STATUS instead of 200 -- verify manually. (Skipped entirely if CLOUDFLARE_ACCOUNT_SUBDOMAIN isn't set.)"
+          else
+            echo "Deployed Worker responded 200 OK."
+          fi
+        if: ${{ vars.CLOUDFLARE_ACCOUNT_SUBDOMAIN != '' }}

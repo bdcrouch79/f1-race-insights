@@ -192,3 +192,36 @@ way. Only the social card needed this fix.
 
 **Consequences**: this is a frontend-only fix -- it doesn't change the analysis contract or its
 meaning, so `ANALYSIS_VERSION` does not bump and no regeneration is required this time.
+
+## 2026-08-16 -- Cloudflare deployment tooling built and build-verified, not deployed
+
+**Constraint**: Bryan asked for RaceIQ to be "plugged into" the Crouch Development showcase. This
+session has read-only Cloudflare account access (can list/inspect Workers) but no deploy
+credentials, and creating a Cloudflare API token or GitHub secrets is explicitly Bryan's action
+per the Bryan OS stop conditions on creating/changing secrets.
+
+**Decision**: build and locally verify the full Cloudflare deployment path rather than only
+writing untested config: installed `@opennextjs/cloudflare` and `wrangler`; added
+`wrangler.jsonc` (Worker name `raceiq-web`), `open-next.config.ts`, `cf:build`/`cf:preview`/
+`cf:deploy` scripts, and `.github/workflows/deploy-cloudflare.yml` (triggers on push to `main`,
+fails fast if `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` aren't set, syncs `BREVO_API_KEY` to
+the Worker's runtime secrets if present, deploys only to the `*.workers.dev` subdomain -- never
+touches the custom domain).
+
+Actually ran the build rather than assuming it would work, and found two real, monorepo-specific
+bugs before calling this "ready": `next.config.ts` was missing `output: "standalone"` (required by
+the adapter); and the existing `outputFileTracingRoot` override (pointing at the monorepo root, so
+`data/**` could be traced into serverless output) conflicted with
+`@opennextjs/cloudflare`'s own monorepo root auto-detection, causing it to nest the standalone
+build output one level deeper than its own manifest reader expected -- an unrecoverable build
+failure, not a warning. Fixed by removing the override: `apps/web` has its own
+`package-lock.json`, so both Next's default inference and the adapter's `findPackagerAndRoot`
+already agree it's the tracing root without an explicit override, and `outputFileTracingIncludes`
+still reaches `../../data/**` fine without one. Verified `.open-next/data/generated/raceiq/...`
+actually contains the real Monaco JSON post-build, and `npx wrangler deploy --dry-run` reads and
+validates the complete asset bundle.
+
+**Consequences / next action**: the deployment path is real and tested, not theoretical. The only
+remaining action is Bryan creating one Cloudflare API token and adding two GitHub repository
+secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`) -- see `docs/CURRENT_STATE.md` for the
+exact steps. Custom domain attachment remains a separate, explicit step after that.

@@ -63,11 +63,15 @@ consequences are handled explicitly:
   client"` component's dependency graph. `lib/slug.ts` exists specifically to give client
   components (`SeasonRaceSelector`) a filesystem-free `slugify()` they can import instead of
   pulling in `lib/raceData.ts`.
-- **Serverless/edge bundling**: `next.config.ts` sets `outputFileTracingRoot` and
-  `outputFileTracingIncludes` so `/`, `/archive`, and `/race/[year]/[event]` trace `data/**` into
-  their deployed function/worker output. Without this, a dynamically-rendered (non-statically
-  generated) request for those routes would not find the data directory on a serverless/edge
-  platform even though it works in local `next dev`.
+- **Serverless/edge bundling**: `next.config.ts` sets `outputFileTracingIncludes` so `/`,
+  `/archive`, and `/race/[year]/[event]` trace `data/**` into their deployed function/worker
+  output. Without this, a dynamically-rendered (non-statically generated) request for those routes
+  would not find the data directory on a serverless/edge platform even though it works in local
+  `next dev`. Deliberately does **not** also set `outputFileTracingRoot` to the monorepo root:
+  `apps/web` has its own `package-lock.json`, so both Next and `@opennextjs/cloudflare` already
+  treat it as its own tracing root; overriding it broke the Cloudflare build outright (see below).
+  Verified: `.open-next/data/generated/raceiq/...` actually contains the real Monaco JSON after a
+  `cf:build`.
 - **Static generation**: `generateStaticParams` in `/race/[year]/[event]/page.tsx` enumerates every
   currently generated (real) analysis plus the one demo route, so the common case is served as a
   prebuilt static page regardless of the runtime's filesystem access.
@@ -75,34 +79,45 @@ consequences are handled explicitly:
 ## Social card (`opengraph-image`)
 
 `apps/web/app/race/[year]/[event]/opengraph-image.tsx` uses `next/og`'s `ImageResponse` with
-`export const runtime = "nodejs"` because it needs the same `data/**` filesystem access as the
-page itself. This is verified working under `next build` + `next start` (Node.js runtime).
-
-**Open risk for a Cloudflare deployment**: Cloudflare Workers (even via OpenNext's Node
-compatibility mode) do not provide real filesystem access to arbitrary repository files at request
-time -- there is no persistent disk, and `data/**` would need to be bundled as a static asset
-instead. If Cloudflare Workers is the final production host, verify the OG route there before
-launch; if it doesn't work, the fallback is generating a static PNG at the same time
-`generate_analysis.py` runs (an artifact next to the JSON), rather than a request-time route. This
-is exactly the kind of infrastructure verification `docs/CURRENT_STATE.md` tracks as outstanding.
+`export const runtime = "nodejs"`. It also defines its own `generateStaticParams` (mirroring the
+page's), which is the fix for the risk this section used to flag: without it, the image is
+generated on demand at request time, needing the same `data/**` filesystem access as the page --
+fine on Node.js runtimes, but Cloudflare Workers have no real filesystem at request time. With
+`generateStaticParams`, Next bakes the PNG as a static file at build time instead, for every route
+this app actually ships (verified: `next build` shows `● (SSG)` for
+`/race/[year]/[event]/opengraph-image`, not `ƒ (Dynamic)`). No remaining runtime `fs` dependency
+anywhere except `/api/subscribe`, which doesn't touch `fs` at all.
 
 ## Deployment architecture
 
-- **Frontend**: intended for Cloudflare (project name `raceiq-web`, domain
-  `raceiq.crouchdevelopment.com`), consistent with other current Crouch Development properties.
-  **Not yet created or connected** -- see `docs/CURRENT_STATE.md` for the exact blocker and next
-  action. Building deployment-ready configuration is in scope for Phase 1; attaching the domain,
-  creating the Cloudflare project, and creating secrets are not (they are Bryan OS stop
-  conditions).
-- **Analysis generation**: run manually or via a future guarded CI job in an environment with
+- **Frontend**: Cloudflare Workers via the `@opennextjs/cloudflare` adapter (`wrangler.jsonc`,
+  `open-next.config.ts`, `npm run cf:build` / `cf:deploy` in `apps/web`), Worker name `raceiq-web`,
+  target domain `raceiq.crouchdevelopment.com`. **Build verified working end to end** (`npm run
+  cf:build` succeeds; `npx wrangler deploy --dry-run` reads and validates the full asset bundle,
+  62 files, ~8.6 MB). **Not yet actually deployed** -- no Cloudflare API token exists in this
+  repository's secrets yet. See `docs/CURRENT_STATE.md` for the exact remaining steps. Attaching
+  the custom domain is a separate, deliberate step this repository's deploy workflow does not
+  perform automatically (it only reaches the Worker's `*.workers.dev` subdomain).
+  - Two real bugs were found and fixed getting the Cloudflare build to succeed, both from this
+    being a monorepo (the Next.js app lives in `apps/web`, not the repo root): `output:
+    "standalone"` was missing from `next.config.ts` (required by `@opennextjs/cloudflare`, or its
+    build step can't find `.next/standalone` at all); and an earlier `outputFileTracingRoot`
+    override pointed at the monorepo root, which caused `@opennextjs/cloudflare`'s own monorepo
+    auto-detection to nest the standalone output under `apps/web/.next/...` while its manifest
+    reader looked for the unnested path -- removing the override let both tools independently
+    agree that `apps/web` (which has its own lockfile) is the root. See `docs/DECISIONS.md`
+    (2026-08-16).
+- **Analysis generation**: run manually (or via a future guarded CI job) in an environment with
   network access to FastF1's data sources (`livetiming.formula1.com`, `api.jolpi.ca`/Ergast
   successor). This sandboxed build environment's egress policy denies both hosts (verified via
   `curl $HTTPS_PROXY/__agentproxy/status`, `connect_rejected` / 403), so no real analysis could be
-  generated here -- see `docs/CURRENT_STATE.md`.
+  generated here -- generation happens on Bryan's machine instead; see `docs/CURRENT_STATE.md`.
 - **Lead capture**: Next.js Route Handler (`apps/web/app/api/subscribe/route.ts`) calling Brevo's
-  API server-side. Requires `BREVO_API_KEY` (name only, per Bryan OS convention; value never
-  committed) and a verified Brevo list ID, neither of which exists yet -- the route fails safely
-  (503, no partial side effects) until they're configured.
+  API server-side. `BREVO_API_KEY` is read at request time, so on Cloudflare it must be a Worker
+  runtime secret (`wrangler secret put`), not a build-time env var -- `.github/workflows/
+  deploy-cloudflare.yml` syncs it from the `BREVO_API_KEY` GitHub secret automatically once that
+  secret exists. Neither the secret nor a verified Brevo list ID exist yet -- the route fails
+  safely (503, no partial side effects) until they're configured.
 
 ## Caching
 
