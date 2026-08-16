@@ -38,6 +38,11 @@ export function generateStaticParams() {
   return [...generated, { year: DEMO_FIXTURE_ROUTE.year, event: DEMO_FIXTURE_ROUTE.eventSlug }];
 }
 
+// Same reasoning as above: no filesystem at request time on Cloudflare
+// Workers, so an unlisted param combo must not fall through to a dynamic
+// render attempt.
+export const dynamicParams = false;
+
 const COLORS = {
   black: "#08090B",
   panel: "#1A1E24",

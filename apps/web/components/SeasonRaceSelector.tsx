@@ -12,15 +12,32 @@ const SEASONS = Array.from(
   (_, i) => CURRENT_SEASON - i,
 );
 
-export function SeasonRaceSelector() {
+interface SeasonRaceSelectorProps {
+  /**
+   * Real generated event slugs, keyed by season. Lets a loose query like
+   * "monaco" resolve to the actual "monaco-grand-prix" report instead of
+   * navigating to a guessed slug that was never generated -- which would
+   * otherwise 404 even for races RaceIQ has already analyzed.
+   */
+  knownEventsBySeason?: Record<string, string[]>;
+}
+
+export function SeasonRaceSelector({ knownEventsBySeason = {} }: SeasonRaceSelectorProps) {
   const router = useRouter();
   const [season, setSeason] = useState(SEASONS[0]);
   const [event, setEvent] = useState("");
 
+  function resolveEventSlug(query: string): string {
+    const guess = slugify(query);
+    const known = knownEventsBySeason[String(season)] ?? [];
+    const matches = known.filter((slug) => slug === guess || slug.includes(guess));
+    return matches.length === 1 ? (matches[0] ?? guess) : guess;
+  }
+
   function handleSubmit(formEvent: React.FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
     if (!event.trim()) return;
-    router.push(`/race/${season}/${slugify(event)}`);
+    router.push(`/race/${season}/${resolveEventSlug(event)}`);
   }
 
   return (

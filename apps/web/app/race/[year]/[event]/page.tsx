@@ -17,6 +17,13 @@ import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/li
 
 const SITE_URL = "https://raceiq.crouchdevelopment.com";
 
+// Cloudflare Workers have no filesystem at request time (see raceData.ts),
+// so any params not returned by generateStaticParams below must 404 at
+// the routing layer rather than fall through to a dynamic render that
+// would crash trying to read data/** -- see not-found.tsx for the page
+// users actually see when that happens.
+export const dynamicParams = false;
+
 interface PageProps {
   params: Promise<{ year: string; event: string }>;
 }

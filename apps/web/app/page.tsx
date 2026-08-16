@@ -38,6 +38,10 @@ export default function HomePage() {
     : DEMO_FIXTURE_ROUTE;
   const isFeaturedSample = !featured;
   const driverInfo = featuredAnalysis ? buildDriverInfo(featuredAnalysis.drivers) : {};
+  const knownEventsBySeason = generated.reduce<Record<string, string[]>>((acc, { year, eventSlug }) => {
+    (acc[year] ??= []).push(eventSlug);
+    return acc;
+  }, {});
 
   return (
     <div>
@@ -71,7 +75,7 @@ export default function HomePage() {
       </section>
 
       <section id="analyze" className="riq-container pb-16">
-        <SeasonRaceSelector />
+        <SeasonRaceSelector knownEventsBySeason={knownEventsBySeason} />
       </section>
 
       {featuredAnalysis ? (
