@@ -1,8 +1,21 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { ImageResponse } from "next/og";
 
 import { buildDriverInfo } from "@/lib/driverInfo";
 import { filterEligibleForHeadline } from "@/lib/headlineEligibility";
 import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/lib/raceData";
+
+// This route is fully statically generated (see generateStaticParams
+// below), so this file read only ever happens at build time, when the
+// full monorepo checkout -- including /assets -- is present. No special
+// deployment bundling needed for it, unlike data/** (see next.config.ts).
+const CD_MARK_DATA_URI = (() => {
+  const markPath = path.resolve(process.cwd(), "..", "..", "assets", "cd-mark.png");
+  const bytes = fs.readFileSync(markPath);
+  return `data:image/png;base64,${bytes.toString("base64")}`;
+})();
 
 export const runtime = "nodejs";
 export const alt = "RaceIQ race analysis card";
@@ -82,38 +95,38 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
           width: "100%",
           height: "100%",
           background: COLORS.black,
-          padding: 64,
+          padding: 56,
           fontFamily: "sans-serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 32, color: COLORS.white, fontWeight: 700 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 999, background: COLORS.red, marginRight: 12 }} />
+          <div style={{ display: "flex", alignItems: "center", fontSize: 30, color: COLORS.white, fontWeight: 700 }}>
+            <div style={{ width: 13, height: 13, borderRadius: 999, background: COLORS.red, marginRight: 11 }} />
             RACE<span style={{ color: COLORS.cyan }}>IQ</span>
           </div>
-          <div style={{ fontSize: 22, color: COLORS.gray }}>raceiq.crouchdevelopment.com</div>
+          <div style={{ fontSize: 20, color: COLORS.gray }}>raceiq.crouchdevelopment.com</div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 40 }}>
-          <div style={{ display: "flex", fontSize: 26, color: COLORS.cyan }}>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+          <div style={{ display: "flex", fontSize: 24, color: COLORS.cyan }}>
             {analysis.event.year} · What the finishing order didn&apos;t show
           </div>
-          <div style={{ fontSize: 52, color: COLORS.white, fontWeight: 700, marginTop: 8 }}>
+          <div style={{ fontSize: 48, color: COLORS.white, fontWeight: 700, marginTop: 6 }}>
             {analysis.event.name}
           </div>
           {headlineDriver ? (
-            <div style={{ display: "flex", fontSize: 30, color: COLORS.white, marginTop: 20 }}>
+            <div style={{ display: "flex", fontSize: 27, color: COLORS.white, marginTop: 14 }}>
               {drivers[headlineDriver]?.fullName ?? headlineDriver} led average race pace
               {headlineEvidence ? ` at ${headlineEvidence.value.toFixed(3)}s/lap` : ""}
             </div>
           ) : null}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 36, gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 22, gap: 8 }}>
           {top5WithDisplayGap.map((row, index) => (
             <div key={row.driver} style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ width: 70, fontSize: 22, color: COLORS.white }}>{drivers[row.driver]?.code ?? row.driver}</div>
-              <div style={{ display: "flex", flex: 1, height: 16, background: COLORS.panel, borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ width: 66, fontSize: 20, color: COLORS.white }}>{drivers[row.driver]?.code ?? row.driver}</div>
+              <div style={{ display: "flex", flex: 1, height: 14, background: COLORS.panel, borderRadius: 7, overflow: "hidden" }}>
                 <div
                   style={{
                     width: `${Math.max(4, (1 - row.displayGapSeconds / (maxGap || 1)) * 100)}%`,
@@ -124,15 +137,18 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
                   }}
                 />
               </div>
-              <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 20, color: COLORS.gray }}>
+              <div style={{ display: "flex", width: 84, justifyContent: "flex-end", fontSize: 18, color: COLORS.gray }}>
                 {index === 0 ? "Fastest" : `+${row.displayGapSeconds.toFixed(2)}s`}
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", marginTop: "auto", fontSize: 18, color: COLORS.gray }}>
-          Independent motorsport analytics. Not affiliated with Formula 1, the FIA, any team, or any driver.
+        <div style={{ display: "flex", alignItems: "center", marginTop: 18, paddingTop: 18, borderTop: `1px solid ${COLORS.panel}`, gap: 12 }}>
+          <img src={CD_MARK_DATA_URI} width={22} height={24} alt="" />
+          <div style={{ display: "flex", fontSize: 15, color: COLORS.gray }}>
+            Built by Crouch Development · Independent motorsport analytics, not affiliated with Formula 1, the FIA, any team, or any driver.
+          </div>
         </div>
       </div>
     ),
