@@ -7,7 +7,7 @@ Last verified: 2026-08-16
 - **Python analysis engine** (`analysis/raceiq/`): `engine.py`, `metrics.py`, `narrative.py`,
   `schemas.py`, `availability.py`. Refactored from the original `main.py` calculations into
   callable, parameter-validated, metric-level-fault-tolerant functions that return the versioned
-  JSON contract (`ANALYSIS_VERSION = "1.1.0"`). Original `main.py` and root `requirements.txt` are
+  JSON contract (`ANALYSIS_VERSION = "1.1.1"`). Original `main.py` and root `requirements.txt` are
   untouched and still work standalone.
 - **Headline-eligibility filter** (`narrative.py`, added in v1.1.0): the four `summary` headline
   picks (fastest average pace, most consistent, strongest closing, largest decline) now require a
@@ -16,7 +16,14 @@ Last verified: 2026-08-16
   before an early incident, field high ~50) topped the raw average-pace and degradation-decline
   rankings, which the social card would have stated as an unqualified "led average race pace" —
   correct arithmetic, misleading headline. The full, unfiltered per-driver rankings are unaffected;
-  an excluded driver's real sample size is recorded in `warnings`. See `docs/DECISIONS.md`.
+  an excluded driver's real sample size is recorded in `warnings`.
+- **Decline-sign fix** (`narrative.py`, added in v1.1.1): verifying the v1.1.0 regeneration
+  surfaced a second issue in the same family. Every eligible Monaco 2024 driver's closing pace beat
+  their opening pace (all negative deltas, likely a red flag bunching up the field), so the old
+  `max(...)` pick still labeled the least-improved driver's *improvement* as "Largest Pace
+  Decline." `largestPaceDeclineDriver` now only populates when the pick's delta is actually
+  positive; otherwise RaceIQ names no decline headline and says why in `warnings`. See
+  `docs/DECISIONS.md` for both fixes.
 - **Team-color identity swatches**: `analysis/raceiq/engine.py::_team_color` looks up each driver's
   real per-season team color from FastF1's own color mapping (`fastf1.plotting.get_team_color`,
   season-aware) and attaches it to `drivers[].teamColor`. Rendered as a small color dot next to
@@ -38,10 +45,10 @@ Last verified: 2026-08-16
 
 ## Verified
 
-- `cd analysis && python3 -m pytest -q` -- 28 passed (metrics math against hand-calculated
-  synthetic fixtures, availability rules, schema validation, headline-eligibility filtering
-  mirroring the real Sargeant scenario, one full `engine.run_analysis()` integration test against a
-  monkeypatched FastF1 session).
+- `cd analysis && python3 -m pytest -q` -- 29 passed (metrics math against hand-calculated
+  synthetic fixtures, availability rules, schema validation, headline-eligibility filtering and
+  the decline-sign fix mirroring real Monaco 2024 data exactly, one full `engine.run_analysis()`
+  integration test against a monkeypatched FastF1 session).
 - `cd apps/web && npm run typecheck` -- passes.
 - `cd apps/web && npx eslint .` -- passes (no errors).
 - `cd apps/web && npm run test` -- 31 passed across 9 files (components, data resolution, format
@@ -49,27 +56,29 @@ Last verified: 2026-08-16
   contract test against a real engine-generated fixture).
 - `cd apps/web && npm run build` -- production build succeeds.
 - Manual browser verification (Playwright, desktop and mobile viewports) against `next start`:
-  homepage, the demo race report, a real Monaco 2024 report, and the dynamic OG image (both demo
-  and real) all rendered correctly, including the team-color swatches on summary cards.
-- **One real analysis was successfully generated** (Bryan's machine, network-unrestricted):
-  2024 Monaco Grand Prix, 16 drivers, schema-valid. This proved the full pipeline works end to end
-  and is what surfaced the Sargeant headline-eligibility issue above.
-- All routes return HTTP 200 under `next start`, including the honest "analysis not yet generated"
-  state for an unknown race.
+  homepage, the demo race report, two successive real Monaco 2024 reports (pre- and post-decline
+  fix), and the dynamic OG image (both demo and real) all rendered correctly, including the
+  team-color swatches on summary cards.
+- **Real analyses were generated twice** (Bryan's machine, network-unrestricted): 2024 Monaco Grand
+  Prix under `1.0.0` (surfaced the Sargeant sample-size issue) and again under `1.1.0` (surfaced the
+  decline-sign issue while verifying the first fix). Both proved the full generation pipeline works
+  end to end; both were superseded by the fixes they revealed.
 
 ## Not verified / blocked
 
-- **No real race analysis is currently committed.** The one real Monaco 2024 file that was
-  generated was produced under the pre-fix engine (`analysisVersion 1.0.0`) and its headline picks
-  were the misleading ones described above, so it was deliberately removed rather than left live
-  with a known-wrong "fastest average pace" claim. `data/generated/` is empty again.
-  - **Next action**: from a network-unrestricted environment (confirmed working: Bryan's machine),
-    pull this branch and rerun `python scripts/generate_analysis.py 2024 Monaco` (the FastF1 local
-    cache from the first run makes this fast) to regenerate under `analysisVersion 1.1.0` with the
-    fix applied, then commit the resulting file under `data/generated/`. Repeat for whichever races
-    should ship first. This build environment's own egress policy still denies
-    `livetiming.formula1.com` and `api.jolpi.ca` (verified via the agent proxy status endpoint,
-    HTTP 403 policy denial), so generation must keep happening outside this sandbox.
+- **No real race analysis is currently committed.** Two real Monaco 2024 files have now been
+  generated and deliberately deleted in turn, each because verifying it surfaced a real headline
+  accuracy bug (see `docs/DECISIONS.md`, both 2026-08-16 entries) rather than because the
+  underlying pace/consistency/degradation math was wrong. `data/generated/` is empty again, this
+  time under the `1.1.1` fix.
+  - **Next action**: from a network-unrestricted environment (confirmed working twice: Bryan's
+    machine), pull this branch and rerun `python scripts/generate_analysis.py 2024 Monaco` (the
+    FastF1 local cache makes this fast) to regenerate under `analysisVersion 1.1.1`, then commit
+    the resulting file under `data/generated/`. Recommend actually reading the summary this time
+    before treating it as final, in case a third edge case shows up. This build environment's own
+    egress policy still denies `livetiming.formula1.com` and `api.jolpi.ca` (verified via the agent
+    proxy status endpoint, HTTP 403 policy denial), so generation must keep happening outside this
+    sandbox.
 - **No deployment exists.** Frontend provider: intended Cloudflare (`raceiq-web`,
   `raceiq.crouchdevelopment.com`), consistent with other current Crouch Development properties,
   but no Cloudflare project has been created or connected. Analysis provider: none (see

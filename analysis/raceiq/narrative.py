@@ -124,17 +124,29 @@ def build_summary(
         )
 
         largest_decline = max(eligible_degradation, key=lambda row: row["deltaSeconds"])
-        summary["largestPaceDeclineDriver"] = largest_decline["driver"]
-        evidence.append(
-            {
-                "metric": "degradation",
-                "driver": largest_decline["driver"],
-                "value": largest_decline["deltaSeconds"],
-                "unit": "seconds",
-                "sampleSize": largest_decline["sampleSize"],
-                "methodology": degradation_methodology,
-            }
-        )
+        if largest_decline["deltaSeconds"] > 0:
+            # Only report a "decline" when a driver actually got slower late
+            # (positive delta). If every eligible driver's closing pace beat
+            # their opening pace -- e.g. a red flag or safety car made the
+            # opening sample the slow one -- the least-improved driver is
+            # still an improvement, not a decline, and must not be labeled
+            # as one.
+            summary["largestPaceDeclineDriver"] = largest_decline["driver"]
+            evidence.append(
+                {
+                    "metric": "degradation",
+                    "driver": largest_decline["driver"],
+                    "value": largest_decline["deltaSeconds"],
+                    "unit": "seconds",
+                    "sampleSize": largest_decline["sampleSize"],
+                    "methodology": degradation_methodology,
+                }
+            )
+        else:
+            warnings.append(
+                "No eligible driver's closing quick-lap pace was slower than their opening pace "
+                "this session, so RaceIQ did not name a largest-pace-decline headline."
+            )
 
         excluded = [row["driver"] for row in degradation_ranking if row not in eligible_degradation]
         if excluded:

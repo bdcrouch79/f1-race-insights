@@ -143,3 +143,24 @@ independence disclaimer in `docs/METHODOLOGY.md`).
 team color, which would make two lines or bars harder to tell apart in exactly the charts where
 readability matters most; those keep the existing categorical accent palette. Team-color swatches
 are an identity marker next to a driver's name, not the chart color scheme.
+
+## 2026-08-16 -- "Largest pace decline" must not label an improvement
+
+**Constraint**: verifying the v1.1.0 regeneration of Monaco 2024 surfaced a second, related
+accuracy problem. Among the eligible (sufficient-sample) drivers, all four top-pace drivers had a
+*negative* degradation delta -- every one of them was faster late in the race than early, most
+likely because a red flag/safety car made the "opening" quick-lap sample the slow one. `max(...,
+key=deltaSeconds)` still picks a "winner" in that situation -- the least-improved driver -- and the
+old code labeled that pick "Largest Pace Decline" even though the value was negative (an
+improvement, not a decline).
+
+**Decision**: `largestPaceDeclineDriver` (and its evidence entry) is now only populated when the
+picked driver's delta is actually positive. When every eligible driver improved late, RaceIQ names
+no decline headline and records why in `warnings` instead of mislabeling an improvement as a
+decline. `strongestLateRaceDriver` is unaffected -- "strongest closing pace" is unambiguous
+regardless of sign.
+
+**Consequences**: another meaning-of-output change, so `ANALYSIS_VERSION` bumps `1.1.0 -> 1.1.1`.
+The v1.1.0 Monaco 2024 file (which had mislabeled Russell's improvement as the "largest pace
+decline") was deleted the same way the v1.0.0 file was; regenerate under `1.1.1` before RaceIQ has
+real data again. See `docs/CURRENT_STATE.md`.

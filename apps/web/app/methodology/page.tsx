@@ -106,6 +106,12 @@ export default function MethodologyPage() {
           headline. The full pace, consistency, and degradation tables still show every driver with
           their real sample size; only the headline picks are filtered.
         </p>
+        <p>
+          Separately, &quot;Largest Pace Decline&quot; only appears when a driver actually got
+          slower late in the race. If every eligible driver got faster late -- observed in real
+          Monaco 2024 data, likely from a red flag bunching up the field -- RaceIQ names no decline
+          headline rather than labeling an improvement as one.
+        </p>
       </Section>
 
       <Section id="team-colors" title="Team-color swatches">

@@ -79,6 +79,13 @@ changes. An excluded driver's exclusion is recorded in `warnings`. If every driv
 a short sample, the filter falls back to the unfiltered field rather than producing no headline at
 all. See `docs/DECISIONS.md` (2026-08-16) for the full rationale.
 
+Separately, `largestPaceDeclineDriver` is only populated when the picked driver's degradation delta
+is actually positive (a genuine slowdown). If every eligible driver got faster late in the race --
+observed in real Monaco 2024 data, most likely from a red flag/safety car making the "opening"
+sample the slow one -- RaceIQ names no decline headline rather than labeling the
+least-improved driver's improvement as a "decline." `strongestLateRaceDriver` is unaffected by
+this, since "strongest closing pace" is unambiguous regardless of sign.
+
 ## Team-color identity swatches
 
 Driver entries include an optional `teamColor`: the team's real color for that season, from
@@ -110,7 +117,7 @@ RaceIQ's four views can be produced for those seasons.
 
 ## Analysis versioning
 
-`analysis/raceiq/schemas.py::ANALYSIS_VERSION` (currently `1.1.0`) is recorded in every generated
+`analysis/raceiq/schemas.py::ANALYSIS_VERSION` (currently `1.1.1`) is recorded in every generated
 file's `analysisVersion` field and namespaces the cache key
 (`data/generated/raceiq/v{version}/...`). A change to how a metric is calculated must bump this
 version rather than silently reinterpreting previously generated files. `validate_analysis()`

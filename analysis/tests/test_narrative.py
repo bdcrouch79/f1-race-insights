@@ -76,6 +76,30 @@ def test_low_sample_driver_excluded_from_degradation_headlines():
     assert any("EARLY" in w for w in warnings)
 
 
+def test_no_decline_headline_when_every_eligible_driver_improved():
+    # Mirrors real Monaco 2024 data exactly: a red flag/safety car made
+    # the "opening" sample the slow one, so every *eligible* driver's
+    # closing pace beat their opening pace (negative delta). TSU is
+    # excluded first for a short sample (20 of a 50-lap field high, below
+    # the 50% threshold); among the remaining three, RUS is the
+    # least-improved -- still an improvement, not a decline, and must not
+    # be labeled "largest pace decline".
+    degradation_ranking = [
+        _degradation_row("HAM", -3.281, 50),
+        _degradation_row("VER", -3.173, 49),
+        _degradation_row("RUS", -3.080, 50),
+        _degradation_row("TSU", -3.487, 20),
+    ]
+
+    result = narrative.build_summary([], [], degradation_ranking, warnings := [])
+
+    assert result["summary"]["strongestLateRaceDriver"] == "HAM"
+    assert result["summary"]["largestPaceDeclineDriver"] is None
+    assert any("TSU" in w for w in warnings)
+    assert any("did not name a largest-pace-decline headline" in w for w in warnings)
+    assert not any(item["metric"] == "degradation" and item["value"] == -3.080 for item in result["evidence"])
+
+
 def test_full_field_headline_unaffected_when_samples_are_comparable():
     pace_ranking = [_pace_row("A", 76.0, 48), _pace_row("B", 77.0, 50)]
 
