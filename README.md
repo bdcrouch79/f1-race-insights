@@ -66,6 +66,11 @@ The original lab script (`python main.py`, using `requirements.txt` at the repos
 works unchanged and remains useful for quick local chart exploration; it is not part of the
 production RaceIQ path. See [`docs/origin.md`](docs/origin.md) for that lab's background.
 
+Each race you generate downloads and caches session data under `cache/` (gitignored -- never
+committed). It's not huge per race, but it accumulates. To clear it on Windows, double-click
+`scripts/clean-cache.bat`; it's safe to run any time and only affects local disk, not anything
+committed to git.
+
 ## Run the frontend locally
 
 ```bash
