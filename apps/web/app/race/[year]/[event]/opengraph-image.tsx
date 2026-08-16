@@ -86,7 +86,9 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
                   style={{
                     width: `${Math.max(4, (1 - row.gapToFastestSeconds / (maxGap || 1)) * 100)}%`,
                     height: "100%",
-                    background: row.rank === 1 ? COLORS.cyan : COLORS.orange,
+                    // Real per-season team color when known, falling back to
+                    // the leader/field accent split -- never a team logo.
+                    background: drivers[row.driver]?.teamColor ?? (row.rank === 1 ? COLORS.cyan : COLORS.orange),
                   }}
                 />
               </div>

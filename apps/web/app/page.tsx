@@ -28,7 +28,16 @@ const HOW_IT_WORKS = [
 export default function HomePage() {
   const demo = loadDemoFixture();
   const generated = listGeneratedAnalyses();
-  const driverInfo = demo ? buildDriverInfo(demo.drivers) : {};
+
+  // Prefer a real analysis for the hero CTA and preview section; only
+  // fall back to the synthetic demo fixture when nothing real exists yet.
+  const featured = generated[0] ?? null;
+  const featuredAnalysis = featured?.analysis ?? demo;
+  const featuredRoute = featured
+    ? { year: featured.year, eventSlug: featured.eventSlug }
+    : DEMO_FIXTURE_ROUTE;
+  const isFeaturedSample = !featured;
+  const driverInfo = featuredAnalysis ? buildDriverInfo(featuredAnalysis.drivers) : {};
 
   return (
     <div>
@@ -49,12 +58,12 @@ export default function HomePage() {
             >
               Analyze a Race
             </a>
-            {demo ? (
+            {featuredAnalysis ? (
               <Link
-                href={`/race/${DEMO_FIXTURE_ROUTE.year}/${DEMO_FIXTURE_ROUTE.eventSlug}`}
+                href={`/race/${featuredRoute.year}/${featuredRoute.eventSlug}`}
                 className="rounded-md border riq-divider px-6 py-3 text-sm font-medium text-riq-white riq-hover-lift"
               >
-                View a Sample Report
+                {isFeaturedSample ? "View a Sample Report" : `Explore ${featuredAnalysis.event.name}`}
               </Link>
             ) : null}
           </div>
@@ -65,21 +74,21 @@ export default function HomePage() {
         <SeasonRaceSelector />
       </section>
 
-      {demo ? (
+      {featuredAnalysis ? (
         <section className="riq-container flex flex-col gap-4 pb-16">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="font-display text-2xl tracking-wide text-riq-white">
-              What a RaceIQ report looks like
+              {isFeaturedSample ? "What a RaceIQ report looks like" : featuredAnalysis.event.name}
             </h2>
-            <Link href={`/race/${DEMO_FIXTURE_ROUTE.year}/${DEMO_FIXTURE_ROUTE.eventSlug}`} className="text-sm text-riq-cyan hover:underline">
-              Full sample report →
+            <Link href={`/race/${featuredRoute.year}/${featuredRoute.eventSlug}`} className="text-sm text-riq-cyan hover:underline">
+              Full report →
             </Link>
           </div>
-          <SampleDataBanner />
-          <SummaryCards summary={demo.summary} evidence={demo.evidence} drivers={driverInfo} />
+          {isFeaturedSample ? <SampleDataBanner /> : null}
+          <SummaryCards summary={featuredAnalysis.summary} evidence={featuredAnalysis.evidence} drivers={driverInfo} />
           <div className="riq-panel p-5 sm:p-6">
             <h3 className="mb-4 font-display text-lg tracking-wide text-riq-white">Average Race Pace</h3>
-            <PaceChart pace={demo.paceRanking} drivers={driverInfo} />
+            <PaceChart pace={featuredAnalysis.paceRanking} drivers={driverInfo} />
           </div>
         </section>
       ) : null}

@@ -62,6 +62,33 @@ stint boundaries, fuel load, pit strategy, traffic, or safety-car periods. Do no
 tire-degradation rate, and do not let downstream content (see `docs/CONTENT_ENGINE.md`) imply
 strategy or tire conclusions this metric cannot support.
 
+## Headline eligibility
+
+The four `summary` fields (fastest average pace, most consistent, strongest closing pace, largest
+pace decline) are not simply "whoever ranks first" -- a driver with very few quick laps relative to
+the field (typically an early retirement) can post the best raw average pace or the smallest
+degradation delta on a handful of clean laps before their incident. Real data surfaced this: Monaco
+2024's Logan Sargeant, 14 quick laps against a field high of ~50, topped the raw average-pace and
+degradation-decline rankings.
+
+`analysis/raceiq/narrative.py` therefore restricts headline picks to drivers with a quick-lap
+sample at least half the field's largest (`MIN_HEADLINE_SAMPLE_RATIO = 0.5`). The full, unfiltered
+`paceRanking`, `consistency`, and `degradation` tables are unaffected -- every driver still appears
+there with their real sample size; only which driver gets named in the summary and the social card
+changes. An excluded driver's exclusion is recorded in `warnings`. If every driver in a session has
+a short sample, the filter falls back to the unfiltered field rather than producing no headline at
+all. See `docs/DECISIONS.md` (2026-08-16) for the full rationale.
+
+## Team-color identity swatches
+
+Driver entries include an optional `teamColor`: the team's real color for that season, from
+FastF1's own color mapping (`fastf1.plotting.get_team_color`), attached at generation time. This is
+descriptive, factual information, not a team logo -- RaceIQ does not use official F1 or team logos,
+broadcast graphics, or other trademarked visual systems (see `docs/DECISIONS.md`, 2026-08-16). The
+swatch is used as a small identity marker next to a driver's name; it is deliberately not used as
+the chart data-series color scheme, since teammates sharing one team color would make lines/bars
+harder to distinguish in the charts where that matters most.
+
 ## What RaceIQ does not do
 
 - Does not simulate or predict alternative race outcomes.
@@ -83,7 +110,7 @@ RaceIQ's four views can be produced for those seasons.
 
 ## Analysis versioning
 
-`analysis/raceiq/schemas.py::ANALYSIS_VERSION` (currently `1.0.0`) is recorded in every generated
+`analysis/raceiq/schemas.py::ANALYSIS_VERSION` (currently `1.1.0`) is recorded in every generated
 file's `analysisVersion` field and namespaces the cache key
 (`data/generated/raceiq/v{version}/...`). A change to how a metric is calculated must bump this
 version rather than silently reinterpreting previously generated files. `validate_analysis()`

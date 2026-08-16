@@ -1,5 +1,5 @@
 {
-  "analysisVersion": "1.0.0",
+  "analysisVersion": "1.1.0",
   "availability": {
     "lapTiming": true,
     "telemetry": false,
@@ -96,32 +96,38 @@
     {
       "code": "MRC",
       "fullName": "J. Marchetti",
-      "team": "Fictional Racing Team"
+      "team": "Fictional Racing Team",
+      "teamColor": "#3560E0"
     },
     {
       "code": "BRG",
       "fullName": "L. Bergstrom",
-      "team": "Fictional Racing Team"
+      "team": "Fictional Racing Team",
+      "teamColor": "#3560E0"
     },
     {
       "code": "DUA",
       "fullName": "R. Duarte",
-      "team": "Sample Motorsport"
+      "team": "Sample Motorsport",
+      "teamColor": "#E0A735"
     },
     {
       "code": "NAK",
       "fullName": "K. Nakashima",
-      "team": "Sample Motorsport"
+      "team": "Sample Motorsport",
+      "teamColor": "#E0A735"
     },
     {
       "code": "FEN",
       "fullName": "T. Fenwick",
-      "team": "Demo Grand Prix Racing"
+      "team": "Demo Grand Prix Racing",
+      "teamColor": "#2FBF71"
     },
     {
       "code": "OYE",
       "fullName": "M. Oyelaran",
-      "team": "Demo Grand Prix Racing"
+      "team": "Demo Grand Prix Racing",
+      "teamColor": "#2FBF71"
     }
   ],
   "event": {
@@ -135,7 +141,7 @@
   "evidence": [
     {
       "driver": "MRC",
-      "methodology": "Mean lap time across FastF1 quick laps (laps under 107% of the session's fastest lap).",
+      "methodology": "Mean lap time across FastF1 quick laps (laps under 107% of the session's fastest lap). Headline picks require a quick-lap sample at least half the field's largest.",
       "metric": "averagePace",
       "sampleSize": 40,
       "unit": "seconds",
@@ -143,7 +149,7 @@
     },
     {
       "driver": "NAK",
-      "methodology": "Standard deviation of lap time across quick laps; lower is steadier.",
+      "methodology": "Standard deviation of lap time across quick laps; lower is steadier. Headline picks require a quick-lap sample at least half the field's largest.",
       "metric": "consistency",
       "sampleSize": 40,
       "unit": "seconds (standard deviation)",
@@ -151,7 +157,7 @@
     },
     {
       "driver": "FEN",
-      "methodology": "Closing-average minus opening-average quick-lap time over the first/last sampled quick laps; heuristic, not a stint-aware tire model.",
+      "methodology": "Closing-average minus opening-average quick-lap time over the first/last sampled quick laps; heuristic, not a stint-aware tire model. Headline picks require a total quick-lap count at least half the field's largest.",
       "metric": "degradation",
       "sampleSize": 5,
       "unit": "seconds",
@@ -159,7 +165,7 @@
     },
     {
       "driver": "DUA",
-      "methodology": "Closing-average minus opening-average quick-lap time over the first/last sampled quick laps; heuristic, not a stint-aware tire model.",
+      "methodology": "Closing-average minus opening-average quick-lap time over the first/last sampled quick laps; heuristic, not a stint-aware tire model. Headline picks require a total quick-lap count at least half the field's largest.",
       "metric": "degradation",
       "sampleSize": 5,
       "unit": "seconds",

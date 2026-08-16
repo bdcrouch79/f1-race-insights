@@ -55,17 +55,38 @@ def _load_session(year: int, event: str, session_code: str, cache_dir: str):
     return session
 
 
+def _team_color(session: Any, team_name: str | None) -> str | None:
+    """Real per-season team color from FastF1's own color mapping.
+
+    Used as an identity swatch next to a driver's name -- a factual
+    color, not a team logo or trademarked graphic (see docs/DECISIONS.md
+    for why RaceIQ doesn't use official team/F1 logos). Never raises:
+    an unresolved team name (rare, e.g. an unusual historical name)
+    just means no swatch is shown.
+    """
+    if not team_name:
+        return None
+    try:
+        import fastf1.plotting as plotting
+
+        return plotting.get_team_color(team_name, session=session)
+    except Exception:  # noqa: BLE001 - deliberately tolerant, see module docstring
+        return None
+
+
 def _driver_info(session: Any, driver_code: str, warnings: list[str]) -> dict[str, Any]:
     try:
         info = session.get_driver(driver_code)
+        team_name = info.get("TeamName")
         return {
             "code": driver_code,
             "fullName": info.get("FullName") or driver_code,
-            "team": info.get("TeamName"),
+            "team": team_name,
+            "teamColor": _team_color(session, team_name),
         }
     except Exception:  # noqa: BLE001 - deliberately tolerant, see module docstring
         warnings.append(f"driver metadata unavailable for {driver_code}")
-        return {"code": driver_code, "fullName": driver_code, "team": None}
+        return {"code": driver_code, "fullName": driver_code, "team": None, "teamColor": None}
 
 
 def run_analysis(

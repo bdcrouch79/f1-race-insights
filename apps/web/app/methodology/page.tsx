@@ -97,6 +97,26 @@ export default function MethodologyPage() {
         </p>
       </Section>
 
+      <Section id="headline-eligibility" title="Headline eligibility">
+        <p>
+          The summary headlines (fastest average pace, most consistent, strongest closing pace,
+          largest pace decline) require a driver&apos;s quick-lap sample to be at least half the
+          field&apos;s largest. A driver who retired early can otherwise post the best raw average
+          on a handful of clean laps before their incident -- correct arithmetic, misleading
+          headline. The full pace, consistency, and degradation tables still show every driver with
+          their real sample size; only the headline picks are filtered.
+        </p>
+      </Section>
+
+      <Section id="team-colors" title="Team-color swatches">
+        <p>
+          Driver names are shown with a small color dot: the team&apos;s real color for that
+          season, from FastF1&apos;s own color data. This is factual, descriptive information, not
+          a team logo -- RaceIQ does not use official F1 or team logos or other trademarked
+          graphics.
+        </p>
+      </Section>
+
       <Section id="exclusions" title="What RaceIQ does not do">
         <ul className="list-disc space-y-2 pl-5">
           <li>It does not simulate alternative race outcomes or predict results.</li>

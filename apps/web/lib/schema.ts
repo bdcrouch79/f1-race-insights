@@ -31,6 +31,11 @@ export const driverSchema = z.object({
   code: z.string(),
   fullName: z.string(),
   team: z.string().nullable(),
+  // Real per-season team color from FastF1's own color mapping, used as
+  // an identity swatch -- not a team logo. Optional/nullable because
+  // older generated files predate this field and some team names don't
+  // resolve to a known color. See analysis/raceiq/engine.py::_team_color.
+  teamColor: z.string().nullable().optional(),
 });
 
 export const paceRankingRowSchema = z.object({

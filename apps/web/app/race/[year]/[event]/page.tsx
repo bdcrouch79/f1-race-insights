@@ -5,6 +5,7 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { SampleDataBanner } from "@/components/SampleDataBanner";
 import { ShareButton } from "@/components/ShareButton";
 import { SummaryCards } from "@/components/SummaryCards";
+import { TeamSwatch } from "@/components/TeamSwatch";
 import { WeekendBriefForm } from "@/components/WeekendBriefForm";
 import { ChartCard } from "@/components/ChartCard";
 import { ConsistencyChart } from "@/components/charts/ConsistencyChart";
@@ -187,7 +188,8 @@ export default async function RaceReportPage({ params }: PageProps) {
         <ul className="grid gap-3 sm:grid-cols-2">
           {analysis.evidence.map((item, index) => (
             <li key={`${item.metric}-${item.driver}-${index}`} className="rounded-md border riq-divider p-4 text-sm">
-              <p className="text-riq-white">
+              <p className="flex items-center gap-1.5 text-riq-white">
+                <TeamSwatch driver={driverInfo[item.driver]} />
                 {item.metric} · {driverInfo[item.driver]?.fullName ?? item.driver}
               </p>
               <p className="mt-1 tabular-nums text-riq-cyan">

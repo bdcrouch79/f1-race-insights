@@ -1,3 +1,4 @@
+import { TeamSwatch } from "@/components/TeamSwatch";
 import { driverLabel } from "@/lib/format";
 import type { DriverInfo } from "@/lib/driverInfo";
 import type { EvidenceItem, RaceAnalysis } from "@/lib/schema";
@@ -45,9 +46,11 @@ export function SummaryCards({
         return (
           <div key={card.key} className="riq-panel riq-hover-lift p-5">
             <p className="text-xs uppercase tracking-wide text-riq-gray">{card.label}</p>
-            <p className="mt-2 font-display text-2xl tracking-wide text-riq-white">
+            <p className="mt-2 flex items-center gap-2 font-display text-2xl tracking-wide text-riq-white">
+              <TeamSwatch driver={driver} />
               {driver ? driverLabel(driver) : card.driverCode}
             </p>
+            {driver?.team ? <p className="mt-0.5 text-xs text-riq-gray">{driver.team}</p> : null}
             {card.evidenceItem ? (
               <p className="mt-3 tabular-nums text-sm text-riq-cyan">
                 {card.evidenceItem.value > 0 && card.metric === "degradation" ? "+" : ""}

@@ -92,3 +92,54 @@ slower late, cyan = faster late) rather than two near-identical opening/closing 
 zero. Absolute values, opening/closing averages, and sample sizes remain fully available in each
 chart's tooltip and in the Evidence and Methodology section -- nothing shown in the tooltip data is
 hidden, only the bar/line geometry changed to make the real spread legible.
+
+## 2026-08-16 -- Headline picks require a minimum quick-lap sample
+
+**Constraint**: the first real generated analysis (2024 Monaco Grand Prix) surfaced a real
+accuracy problem. Logan Sargeant retired early with only 14 quick laps against a field high of
+~50; his few clean laps before the incident happened to average faster than everyone else's full
+race, so raw ranking math made him "fastest average pace" and "largest pace decline" -- correct
+arithmetic, misleading headline, and the social card would have stated it as an unqualified claim
+with no lap count at all ("Logan Sargeant led average race pace at 76.233s/lap").
+
+**Decision**: `analysis/raceiq/narrative.py` now restricts the four `summary` headline picks to
+drivers whose quick-lap sample is at least `MIN_HEADLINE_SAMPLE_RATIO` (0.5) of the field's
+largest sample. The full, unfiltered `paceRanking`, `consistency`, and `degradation` tables are
+unaffected -- every driver still appears there with their real sample size; only which driver gets
+named in `summary` and the social card changes. An excluded driver is recorded in `warnings` (e.g.
+"SAR had the fastest raw average pace but only 14 quick laps and was excluded from the headline
+pick as an unrepresentative sample"). If every driver in a session has a short sample (e.g. a
+red-flagged race), the filter falls back to the unfiltered field rather than producing no headline
+at all.
+
+**Consequences**: this changes the meaning of already-generated `summary` output, so
+`ANALYSIS_VERSION` was bumped `1.0.0 -> 1.1.0`. The one real file generated under `1.0.0` (Monaco
+2024) was deliberately deleted rather than left live with the known-misleading headline; it must
+be regenerated under `1.1.0` before RaceIQ has real data again. See `docs/CURRENT_STATE.md`.
+`apps/web/lib/raceData.ts` was also fixed to prefer the highest `analysisVersion` when a race
+exists under more than one version directory, rather than returning whichever version its
+directory listing happened to enumerate first.
+
+## 2026-08-16 -- Team-color identity swatches instead of team logos
+
+**Constraint**: Bryan asked for team logos. The original brief is explicit and non-negotiable:
+*"Do not use official Formula 1 logos, team logos, copyrighted broadcast graphics, or trademarked
+visual systems without verified permission"* and RaceIQ must not imply affiliation with any team.
+Team logos are trademarked assets; using them on a page that states "independent, not affiliated
+with any team" is the exact contradiction that clause exists to prevent.
+
+**Decision**: use each team's real per-season color instead, sourced from FastF1's own color
+mapping (`fastf1.plotting.get_team_color`, season-aware -- not a hand-typed table that would go
+stale across livery/rebrand years) rather than any logo image. `analysis/raceiq/engine.py`
+attaches `drivers[].teamColor` (nullable, since an unusual historical team name may not resolve).
+Rendered as a small color dot (`TeamSwatch`/`DriverWithTeam` components) next to driver names on
+summary cards and the evidence panel, and as the pace-bar fill color on the social card. A color is
+factual, descriptive information, not a trademarked graphic -- this is the same reasoning that
+already permits driver abbreviations and factual race data elsewhere in RaceIQ (see the
+independence disclaimer in `docs/METHODOLOGY.md`).
+
+**Explicitly not done**: team colors were not applied to the chart *data-series* palette
+(`lib/colors.ts`) used by the pace/consistency/degradation/lap-evolution charts. Teammates share a
+team color, which would make two lines or bars harder to tell apart in exactly the charts where
+readability matters most; those keep the existing categorical accent palette. Team-color swatches
+are an identity marker next to a driver's name, not the chart color scheme.

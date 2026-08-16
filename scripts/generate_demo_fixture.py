@@ -29,12 +29,12 @@ from raceiq import metrics, narrative  # noqa: E402
 from raceiq.schemas import ANALYSIS_VERSION, validate_analysis  # noqa: E402
 
 DRIVERS = {
-    "MRC": {"fullName": "J. Marchetti", "team": "Fictional Racing Team", "base": 76.4, "drift": 0.35},
-    "BRG": {"fullName": "L. Bergstrom", "team": "Fictional Racing Team", "base": 76.7, "drift": -0.10},
-    "DUA": {"fullName": "R. Duarte", "team": "Sample Motorsport", "base": 77.0, "drift": 0.55},
-    "NAK": {"fullName": "K. Nakashima", "team": "Sample Motorsport", "base": 77.2, "drift": 0.05},
-    "FEN": {"fullName": "T. Fenwick", "team": "Demo Grand Prix Racing", "base": 77.5, "drift": -0.40},
-    "OYE": {"fullName": "M. Oyelaran", "team": "Demo Grand Prix Racing", "base": 77.9, "drift": 0.20},
+    "MRC": {"fullName": "J. Marchetti", "team": "Fictional Racing Team", "teamColor": "#3560E0", "base": 76.4, "drift": 0.35},
+    "BRG": {"fullName": "L. Bergstrom", "team": "Fictional Racing Team", "teamColor": "#3560E0", "base": 76.7, "drift": -0.10},
+    "DUA": {"fullName": "R. Duarte", "team": "Sample Motorsport", "teamColor": "#E0A735", "base": 77.0, "drift": 0.55},
+    "NAK": {"fullName": "K. Nakashima", "team": "Sample Motorsport", "teamColor": "#E0A735", "base": 77.2, "drift": 0.05},
+    "FEN": {"fullName": "T. Fenwick", "team": "Demo Grand Prix Racing", "teamColor": "#2FBF71", "base": 77.5, "drift": -0.40},
+    "OYE": {"fullName": "M. Oyelaran", "team": "Demo Grand Prix Racing", "teamColor": "#2FBF71", "base": 77.9, "drift": 0.20},
 }
 
 LAP_COUNT = 40
@@ -92,7 +92,12 @@ def main() -> int:
         "summary": narrative_result["summary"],
         "evidence": narrative_result["evidence"],
         "drivers": [
-            {"code": code, "fullName": spec["fullName"], "team": spec["team"]}
+            {
+                "code": code,
+                "fullName": spec["fullName"],
+                "team": spec["team"],
+                "teamColor": spec["teamColor"],
+            }
             for code, spec in DRIVERS.items()
         ],
         "paceRanking": pace_ranking,

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-ANALYSIS_VERSION = "1.0.0"
+ANALYSIS_VERSION = "1.1.0"
 
 REQUIRED_TOP_LEVEL_KEYS = {
     "analysisVersion",

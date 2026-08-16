@@ -38,26 +38,53 @@ function readAndValidate(filePath: string): RaceAnalysis | null {
   return parsed.data;
 }
 
-/** Load a generated (real) race analysis, keyed by the RaceIQ cache convention. */
-export function loadGeneratedAnalysis(year: string, eventSlug: string, session = "R"): RaceAnalysis | null {
-  if (!fs.existsSync(GENERATED_ROOT)) return null;
-  const versionDirs = fs.readdirSync(GENERATED_ROOT).filter((d) => d.startsWith("v"));
-  for (const versionDir of versionDirs) {
-    const candidate = path.join(GENERATED_ROOT, versionDir, year, eventSlug, `${session}.json`);
-    const result = readAndValidate(candidate);
-    if (result) return result;
+/** Compare two "analysisVersion" strings (e.g. "1.10.0" > "1.9.0") -- plain string sort gets this wrong. */
+function compareVersions(a: string, b: string): number {
+  const partsA = a.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const partsB = b.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const diff = (partsA[i] ?? 0) - (partsB[i] ?? 0);
+    if (diff !== 0) return diff;
   }
-  return null;
+  return 0;
 }
 
-/** List every generated (real) analysis currently committed to the repository. */
-export function listGeneratedAnalyses(): { year: string; eventSlug: string; analysis: RaceAnalysis }[] {
+function versionDirs(): string[] {
   if (!fs.existsSync(GENERATED_ROOT)) return [];
-  const results: { year: string; eventSlug: string; analysis: RaceAnalysis }[] = [];
+  return fs.readdirSync(GENERATED_ROOT).filter((d) => {
+    const full = path.join(GENERATED_ROOT, d);
+    return d.startsWith("v") && fs.statSync(full).isDirectory();
+  });
+}
 
-  for (const versionDir of fs.readdirSync(GENERATED_ROOT)) {
+/**
+ * Load a generated (real) race analysis, keyed by the RaceIQ cache
+ * convention. When the same race exists under more than one engine
+ * version (e.g. after a regeneration with a fixed methodology), the
+ * highest analysisVersion wins -- older versioned files stay on disk
+ * as an audit trail but are never served over a newer one.
+ */
+export function loadGeneratedAnalysis(year: string, eventSlug: string, session = "R"): RaceAnalysis | null {
+  let best: RaceAnalysis | null = null;
+  for (const versionDir of versionDirs()) {
+    const candidate = readAndValidate(path.join(GENERATED_ROOT, versionDir, year, eventSlug, `${session}.json`));
+    if (candidate && (!best || compareVersions(candidate.analysisVersion, best.analysisVersion) > 0)) {
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+/**
+ * List every generated (real) analysis currently committed to the
+ * repository, one entry per race -- deduplicated to the highest
+ * analysisVersion when a race exists under more than one version.
+ */
+export function listGeneratedAnalyses(): { year: string; eventSlug: string; analysis: RaceAnalysis }[] {
+  const best = new Map<string, { year: string; eventSlug: string; analysis: RaceAnalysis }>();
+
+  for (const versionDir of versionDirs()) {
     const versionPath = path.join(GENERATED_ROOT, versionDir);
-    if (!fs.statSync(versionPath).isDirectory()) continue;
 
     for (const year of fs.readdirSync(versionPath)) {
       const yearPath = path.join(versionPath, year);
@@ -70,12 +97,19 @@ export function listGeneratedAnalyses(): { year: string; eventSlug: string; anal
         for (const file of fs.readdirSync(eventPath)) {
           if (!file.endsWith(".json")) continue;
           const analysis = readAndValidate(path.join(eventPath, file));
-          if (analysis) results.push({ year, eventSlug, analysis });
+          if (!analysis) continue;
+
+          const key = `${year}/${eventSlug}`;
+          const existing = best.get(key);
+          if (!existing || compareVersions(analysis.analysisVersion, existing.analysis.analysisVersion) > 0) {
+            best.set(key, { year, eventSlug, analysis });
+          }
         }
       }
     }
   }
-  return results;
+
+  return [...best.values()];
 }
 
 /** Load the synthetic demo fixture used for interface verification only. */
