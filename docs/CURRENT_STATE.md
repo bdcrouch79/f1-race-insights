@@ -22,8 +22,15 @@ Last verified: 2026-08-16
   their opening pace (all negative deltas, likely a red flag bunching up the field), so the old
   `max(...)` pick still labeled the least-improved driver's *improvement* as "Largest Pace
   Decline." `largestPaceDeclineDriver` now only populates when the pick's delta is actually
-  positive; otherwise RaceIQ names no decline headline and says why in `warnings`. See
-  `docs/DECISIONS.md` for both fixes.
+  positive; otherwise RaceIQ names no decline headline and says why in `warnings`.
+- **Social-card consistency fix** (`apps/web/lib/headlineEligibility.ts`, frontend-only, no
+  version bump): verifying the v1.1.1 regeneration surfaced a third bug -- the social card's
+  headline text used the fixed `summary.fastestAveragePaceDriver`, but its bar chart independently
+  re-derived a "top 5" from the raw, unfiltered `paceRanking`, so Sargeant's bar still rendered as
+  the longest/fastest directly under text naming Hamilton. Fixed by applying the same eligibility
+  filter to the card's bar chart and recomputing gaps relative to the eligible leader rather than
+  trusting `gapToFastestSeconds` (which is relative to the single fastest driver overall). See
+  `docs/DECISIONS.md` for all three fixes.
 - **Team-color identity swatches**: `analysis/raceiq/engine.py::_team_color` looks up each driver's
   real per-season team color from FastF1's own color mapping (`fastf1.plotting.get_team_color`,
   season-aware) and attaches it to `drivers[].teamColor`. Rendered as a small color dot next to
@@ -51,34 +58,36 @@ Last verified: 2026-08-16
   integration test against a monkeypatched FastF1 session).
 - `cd apps/web && npm run typecheck` -- passes.
 - `cd apps/web && npx eslint .` -- passes (no errors).
-- `cd apps/web && npm run test` -- 31 passed across 9 files (components, data resolution, format
-  helpers, metadata generation, subscribe-route validation/fail-safe behavior, and a schema
-  contract test against a real engine-generated fixture).
-- `cd apps/web && npm run build` -- production build succeeds.
+- `cd apps/web && npm run test` -- 35 passed across 10 files (components, data resolution, format
+  helpers, metadata generation, subscribe-route validation/fail-safe behavior, the social-card
+  eligibility filter, and a schema contract test against a real engine-generated fixture).
+- `cd apps/web && npm run build` -- production build succeeds; `/race/2024/monaco-grand-prix`
+  statically generated alongside the demo route.
 - Manual browser verification (Playwright, desktop and mobile viewports) against `next start`:
-  homepage, the demo race report, two successive real Monaco 2024 reports (pre- and post-decline
-  fix), and the dynamic OG image (both demo and real) all rendered correctly, including the
-  team-color swatches on summary cards.
-- **Real analyses were generated twice** (Bryan's machine, network-unrestricted): 2024 Monaco Grand
-  Prix under `1.0.0` (surfaced the Sargeant sample-size issue) and again under `1.1.0` (surfaced the
-  decline-sign issue while verifying the first fix). Both proved the full generation pipeline works
-  end to end; both were superseded by the fixes they revealed.
+  homepage, the demo race report, three successive real Monaco 2024 reports (one per fix), and the
+  dynamic OG image (both demo and real, pre- and post-social-card fix) all rendered correctly,
+  including the team-color swatches on summary cards. The final render was read carefully end to
+  end -- headline text, warnings, full tables, and the social card -- and is internally consistent.
+
+## Real data status
+
+**One real analysis is committed and verified**: 2024 Monaco Grand Prix,
+`data/generated/raceiq/v1.1.1/2024/monaco-grand-prix/R.json`, generated on Bryan's machine
+(network-unrestricted) and confirmed correct after three rounds of fixes, each caught by actually
+reading the output rather than trusting the arithmetic:
+
+1. **v1.0.0**: Sargeant's 14-lap sample topped "fastest average pace" and "largest pace decline" --
+   fixed by the headline-eligibility filter.
+2. **v1.1.0**: with Sargeant excluded, every remaining eligible driver had *improved* late
+   (negative delta), so the old code still labeled the least-improved one a "decline" -- fixed by
+   requiring a positive delta for that headline.
+3. **v1.1.1 data, frontend-only fix**: the social card's headline text was correct but its bar
+   chart still derived its own unfiltered "top 5" from `paceRanking`, so Sargeant's bar still
+   rendered as the fastest under text naming Hamilton -- fixed in
+   `apps/web/lib/headlineEligibility.ts`; no further regeneration was needed for this one.
 
 ## Not verified / blocked
 
-- **No real race analysis is currently committed.** Two real Monaco 2024 files have now been
-  generated and deliberately deleted in turn, each because verifying it surfaced a real headline
-  accuracy bug (see `docs/DECISIONS.md`, both 2026-08-16 entries) rather than because the
-  underlying pace/consistency/degradation math was wrong. `data/generated/` is empty again, this
-  time under the `1.1.1` fix.
-  - **Next action**: from a network-unrestricted environment (confirmed working twice: Bryan's
-    machine), pull this branch and rerun `python scripts/generate_analysis.py 2024 Monaco` (the
-    FastF1 local cache makes this fast) to regenerate under `analysisVersion 1.1.1`, then commit
-    the resulting file under `data/generated/`. Recommend actually reading the summary this time
-    before treating it as final, in case a third edge case shows up. This build environment's own
-    egress policy still denies `livetiming.formula1.com` and `api.jolpi.ca` (verified via the agent
-    proxy status endpoint, HTTP 403 policy denial), so generation must keep happening outside this
-    sandbox.
 - **No deployment exists.** Frontend provider: intended Cloudflare (`raceiq-web`,
   `raceiq.crouchdevelopment.com`), consistent with other current Crouch Development properties,
   but no Cloudflare project has been created or connected. Analysis provider: none (see
@@ -115,12 +124,14 @@ Last verified: 2026-08-16
 
 ## Exact next action
 
-1. From a network-unrestricted environment, generate and commit at least one real race analysis
-   under the current engine version (`python scripts/generate_analysis.py 2024 Monaco`).
+1. ~~Generate and commit at least one real race analysis.~~ Done: 2024 Monaco Grand Prix is
+   committed under `analysisVersion 1.1.1` and verified. Generate more races the same way
+   (`python scripts/generate_analysis.py <year> <event>`) whenever more coverage is wanted --
+   actually read the resulting summary before committing, per the three fixes above.
 2. Bryan selects and creates the Cloudflare (or alternative) hosting project for `apps/web`,
    including verifying the `opengraph-image` route's `node:fs` behavior on that platform before
    launch.
 3. Bryan creates the Brevo "RaceIQ Weekend Brief" list, sender, and attributes, then provides the
    verified list ID and `BREVO_API_KEY` secret to the hosting platform.
-4. Only after 1-3: attach the `raceiq.crouchdevelopment.com` domain and flip the frontend from
+4. Only after 2-3: attach the `raceiq.crouchdevelopment.com` domain and flip the frontend from
    preview to production review per `bdc-os/docs/BUILD_AND_PREVIEW_WORKFLOW.md`.

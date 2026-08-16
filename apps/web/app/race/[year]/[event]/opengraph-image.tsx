@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { buildDriverInfo } from "@/lib/driverInfo";
+import { filterEligibleForHeadline } from "@/lib/headlineEligibility";
 import { resolveAnalysis } from "@/lib/raceData";
 
 export const runtime = "nodejs";
@@ -34,8 +35,23 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
   }
 
   const drivers = buildDriverInfo(analysis.drivers);
-  const top5 = analysis.paceRanking.slice(0, 5);
-  const maxGap = Math.max(1, ...top5.map((row) => row.gapToFastestSeconds));
+
+  // The raw paceRanking's own gapToFastestSeconds is relative to the
+  // single fastest driver overall, who may not be headline-eligible
+  // (see docs/DECISIONS.md, 2026-08-16: Sargeant's 14-lap Monaco 2024
+  // sample). Filter to eligible drivers the same way the headline was
+  // picked, then recompute gaps relative to the eligible leader --
+  // otherwise the bar chart can show an excluded driver's bar as the
+  // longest/fastest directly under a headline naming someone else, or
+  // show the real leader with a nonzero gap as if they weren't first.
+  const eligiblePace = filterEligibleForHeadline(analysis.paceRanking, "sampleSize");
+  const top5 = eligiblePace.slice(0, 5);
+  const eligibleFastestSeconds = top5[0]?.averageLapTimeSeconds ?? 0;
+  const top5WithDisplayGap = top5.map((row) => ({
+    ...row,
+    displayGapSeconds: row.averageLapTimeSeconds - eligibleFastestSeconds,
+  }));
+  const maxGap = Math.max(1, ...top5WithDisplayGap.map((row) => row.displayGapSeconds));
   const headlineDriver = analysis.summary.fastestAveragePaceDriver;
   const headlineEvidence = analysis.evidence.find(
     (item) => item.metric === "averagePace" && item.driver === headlineDriver,
@@ -78,22 +94,22 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", marginTop: 36, gap: 10 }}>
-          {top5.map((row) => (
+          {top5WithDisplayGap.map((row, index) => (
             <div key={row.driver} style={{ display: "flex", alignItems: "center" }}>
               <div style={{ width: 70, fontSize: 22, color: COLORS.white }}>{drivers[row.driver]?.code ?? row.driver}</div>
               <div style={{ display: "flex", flex: 1, height: 16, background: COLORS.panel, borderRadius: 8, overflow: "hidden" }}>
                 <div
                   style={{
-                    width: `${Math.max(4, (1 - row.gapToFastestSeconds / (maxGap || 1)) * 100)}%`,
+                    width: `${Math.max(4, (1 - row.displayGapSeconds / (maxGap || 1)) * 100)}%`,
                     height: "100%",
                     // Real per-season team color when known, falling back to
                     // the leader/field accent split -- never a team logo.
-                    background: drivers[row.driver]?.teamColor ?? (row.rank === 1 ? COLORS.cyan : COLORS.orange),
+                    background: drivers[row.driver]?.teamColor ?? (index === 0 ? COLORS.cyan : COLORS.orange),
                   }}
                 />
               </div>
               <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 20, color: COLORS.gray }}>
-                +{row.gapToFastestSeconds.toFixed(2)}s
+                {index === 0 ? "Fastest" : `+${row.displayGapSeconds.toFixed(2)}s`}
               </div>
             </div>
           ))}

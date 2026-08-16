@@ -164,3 +164,31 @@ regardless of sign.
 The v1.1.0 Monaco 2024 file (which had mislabeled Russell's improvement as the "largest pace
 decline") was deleted the same way the v1.0.0 file was; regenerate under `1.1.1` before RaceIQ has
 real data again. See `docs/CURRENT_STATE.md`.
+
+## 2026-08-16 -- Social card must apply the same headline filter it displays text for
+
+**Constraint**: verifying the real v1.1.1 Monaco 2024 regeneration -- the fix for the previous two
+entries -- surfaced a third bug, this time in the social card specifically.
+`opengraph-image.tsx` correctly used the fixed `summary.fastestAveragePaceDriver` ("Lewis Hamilton
+led average race pace") for its headline text, but independently built its top-5 bar chart from the
+raw, unfiltered `paceRanking`. The result: Sargeant's bar rendered at the top, full width, cyan
+("fastest"), directly under text naming Hamilton -- the card contradicted itself. Even after
+filtering, the raw `gapToFastestSeconds` field is relative to the single fastest driver overall
+(Sargeant), not the eligible leader, so Hamilton's own bar would still have shown a nonzero gap as
+if he weren't first.
+
+**Decision**: any frontend surface that independently re-derives a "top N" or "the leader" from the
+full `paceRanking` table -- not just the engine's own `summary` field -- must apply the same
+eligibility filter the headline was picked with. `apps/web/lib/headlineEligibility.ts` mirrors
+`analysis/raceiq/narrative.py`'s `_eligible_for_headline` (kept in sync via `MIN_HEADLINE_SAMPLE_RATIO
+= 0.5` in both places) and is now used by `opengraph-image.tsx`, which also recomputes each row's
+gap relative to the eligible leader instead of trusting the raw `gapToFastestSeconds`.
+
+**Explicitly not changed**: the full report's own `PaceChart` (on `/race/[year]/[event]` and the
+homepage preview) still shows every driver unfiltered, per the original 2026-08-16 headline-
+eligibility decision -- that's an interactive chart with hover tooltips showing each driver's real
+sample size, not a flat, decontextualized, no-tooltip image, so the same risk doesn't apply the same
+way. Only the social card needed this fix.
+
+**Consequences**: this is a frontend-only fix -- it doesn't change the analysis contract or its
+meaning, so `ANALYSIS_VERSION` does not bump and no regeneration is required this time.
