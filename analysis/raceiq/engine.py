@@ -14,6 +14,7 @@ SelectionError``) and for a session that fails to load entirely.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from raceiq import metrics, narrative
@@ -47,6 +48,7 @@ METHODOLOGY = {
 def _load_session(year: int, event: str, session_code: str, cache_dir: str):
     import fastf1
 
+    Path(cache_dir).mkdir(parents=True, exist_ok=True)
     fastf1.Cache.enable_cache(cache_dir)
     session = fastf1.get_session(year, event, session_code)
     session.load()
