@@ -132,6 +132,37 @@ export default function HomePage() {
       </section>
 
       <section className="riq-container pb-16">
+        <div className="riq-panel flex flex-col gap-4 border-riq-cyan/30 p-6 sm:p-8">
+          <h2 className="font-display text-2xl tracking-wide text-riq-white">Why this exists</h2>
+          <p className="text-riq-gray">
+            Every business already has numbers sitting around: call logs, response times,
+            inventory counts, ad spend, website traffic. Almost none of it gets turned into an
+            actual answer. It just sits in a spreadsheet nobody opens.
+          </p>
+          <p className="text-riq-gray">
+            A Formula 1 race is one of the messier data problems you can find: twenty drivers,
+            dozens of laps each, thousands of individual lap times, all recorded in real time.
+            What you just saw above is that mess turned into something anyone can read in ten
+            seconds, with every number traceable back to where it came from.
+          </p>
+          <p className="text-riq-gray">
+            That is not really a motorsport project. It is proof of what happens when someone
+            actually builds the system instead of leaving the data alone. If your business has
+            numbers sitting around that nobody has turned into answers yet, that is the kind of
+            problem Crouch Development builds systems to solve.
+          </p>
+          <div>
+            <a
+              href="https://crouchdevelopment.com/systems"
+              className="inline-block rounded-md bg-riq-cyan px-5 py-2.5 text-sm font-medium text-riq-black transition-opacity hover:opacity-90"
+            >
+              See what Crouch Development builds
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="riq-container pb-16">
         <WeekendBriefForm source="homepage" />
       </section>
 

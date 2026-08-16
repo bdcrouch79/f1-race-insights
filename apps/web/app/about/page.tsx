@@ -4,7 +4,8 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "What RaceIQ is, who builds it, and how it's built.",
+  description:
+    "What RaceIQ is, why Crouch Development built it, and how it applies to any business sitting on unused data.",
 };
 
 export default function AboutPage() {
@@ -33,6 +34,32 @@ export default function AboutPage() {
           </a>
           , a small motorsport analytics lab, and grew into a public application without
           discarding that lab&apos;s original working analysis.
+        </p>
+
+        <h2 className="pt-4 font-display text-xl tracking-wide text-riq-white">Why this exists</h2>
+        <p>
+          Every business already has numbers sitting around: call logs, response times, inventory
+          counts, ad spend, website traffic. Almost none of it gets turned into an actual answer.
+          It just sits in a spreadsheet nobody opens.
+        </p>
+        <p>
+          A Formula 1 race is one of the messier data problems you can find: twenty drivers,
+          dozens of laps each, thousands of individual lap times, all recorded in real time.
+          RaceIQ takes that mess and turns it into something anyone can read in ten seconds, with
+          every number traceable back to where it came from.
+        </p>
+        <p>
+          That is not really a motorsport project. It is proof of what happens when someone
+          actually builds the system instead of leaving the data alone. Bryan Crouch built RaceIQ
+          to show that directly. If your business has numbers sitting around that nobody has
+          turned into answers yet, that is the kind of problem{" "}
+          <a
+            href="https://crouchdevelopment.com/systems"
+            className="underline underline-offset-2 hover:text-riq-white"
+          >
+            Crouch Development
+          </a>{" "}
+          builds systems to solve.
         </p>
 
         <h2 className="pt-4 font-display text-xl tracking-wide text-riq-white">How it&apos;s built</h2>
