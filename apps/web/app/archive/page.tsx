@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ArchiveGrid, type ArchiveEntry } from "@/components/ArchiveGrid";
 import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, loadDemoFixture } from "@/lib/raceData";
 import { LAP_TIMING_MIN_SEASON } from "@/lib/availability";
+import { findManifestEntry } from "@/lib/raceManifest";
 
 export const metadata: Metadata = {
   title: "Archive",
@@ -14,7 +15,18 @@ export default function ArchivePage() {
   const demo = loadDemoFixture();
 
   const entries: ArchiveEntry[] = [
-    ...generated.map(({ year, eventSlug, analysis }) => ({ year, eventSlug, analysis, isSample: false })),
+    ...generated.map(({ year, eventSlug, analysis }) => {
+      const manifestEntry = findManifestEntry(year, analysis.event.name);
+      return {
+        year,
+        eventSlug,
+        analysis,
+        isSample: false,
+        category: manifestEntry?.category,
+        featured: manifestEntry?.featured ?? false,
+        description: manifestEntry?.description,
+      };
+    }),
     ...(demo
       ? [{ year: DEMO_FIXTURE_ROUTE.year, eventSlug: DEMO_FIXTURE_ROUTE.eventSlug, analysis: demo, isSample: true }]
       : []),

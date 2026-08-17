@@ -1,0 +1,1591 @@
+{
+  "analysisVersion": "1.1.1",
+  "availability": {
+    "lapTiming": true,
+    "telemetry": true,
+    "tireCompounds": true,
+    "weather": true
+  },
+  "consistency": [
+    {
+      "driver": "KUB",
+      "rank": 1,
+      "sampleSize": 8,
+      "stdDevSeconds": 0.347
+    },
+    {
+      "driver": "RUS",
+      "rank": 2,
+      "sampleSize": 29,
+      "stdDevSeconds": 0.413
+    },
+    {
+      "driver": "GRO",
+      "rank": 3,
+      "sampleSize": 49,
+      "stdDevSeconds": 0.622
+    },
+    {
+      "driver": "RAI",
+      "rank": 4,
+      "sampleSize": 52,
+      "stdDevSeconds": 0.63
+    },
+    {
+      "driver": "PER",
+      "rank": 5,
+      "sampleSize": 48,
+      "stdDevSeconds": 0.682
+    },
+    {
+      "driver": "RIC",
+      "rank": 6,
+      "sampleSize": 50,
+      "stdDevSeconds": 0.682
+    },
+    {
+      "driver": "GIO",
+      "rank": 7,
+      "sampleSize": 52,
+      "stdDevSeconds": 0.685
+    },
+    {
+      "driver": "SAI",
+      "rank": 8,
+      "sampleSize": 50,
+      "stdDevSeconds": 0.724
+    },
+    {
+      "driver": "MAG",
+      "rank": 9,
+      "sampleSize": 43,
+      "stdDevSeconds": 0.739
+    },
+    {
+      "driver": "STR",
+      "rank": 10,
+      "sampleSize": 49,
+      "stdDevSeconds": 0.75
+    },
+    {
+      "driver": "HUL",
+      "rank": 11,
+      "sampleSize": 46,
+      "stdDevSeconds": 0.778
+    },
+    {
+      "driver": "NOR",
+      "rank": 12,
+      "sampleSize": 51,
+      "stdDevSeconds": 0.786
+    },
+    {
+      "driver": "GAS",
+      "rank": 13,
+      "sampleSize": 54,
+      "stdDevSeconds": 0.797
+    },
+    {
+      "driver": "BOT",
+      "rank": 14,
+      "sampleSize": 46,
+      "stdDevSeconds": 0.845
+    },
+    {
+      "driver": "VET",
+      "rank": 15,
+      "sampleSize": 54,
+      "stdDevSeconds": 0.846
+    },
+    {
+      "driver": "VER",
+      "rank": 16,
+      "sampleSize": 56,
+      "stdDevSeconds": 0.905
+    },
+    {
+      "driver": "HAM",
+      "rank": 17,
+      "sampleSize": 56,
+      "stdDevSeconds": 0.911
+    },
+    {
+      "driver": "KVY",
+      "rank": 18,
+      "sampleSize": 47,
+      "stdDevSeconds": 0.947
+    },
+    {
+      "driver": "ALB",
+      "rank": 19,
+      "sampleSize": 54,
+      "stdDevSeconds": 0.985
+    },
+    {
+      "driver": "LEC",
+      "rank": 20,
+      "sampleSize": 56,
+      "stdDevSeconds": 0.999
+    }
+  ],
+  "dataSource": "generated",
+  "degradation": [
+    {
+      "closingAverageSeconds": 71.189,
+      "deltaSeconds": -2.091,
+      "driver": "VER",
+      "heuristic": true,
+      "openingAverageSeconds": 73.279,
+      "sampleSize": 5,
+      "totalQuickLaps": 56
+    },
+    {
+      "closingAverageSeconds": 72.449,
+      "deltaSeconds": -1.051,
+      "driver": "HAM",
+      "heuristic": true,
+      "openingAverageSeconds": 73.5,
+      "sampleSize": 5,
+      "totalQuickLaps": 56
+    },
+    {
+      "closingAverageSeconds": 71.807,
+      "deltaSeconds": -1.912,
+      "driver": "VET",
+      "heuristic": true,
+      "openingAverageSeconds": 73.72,
+      "sampleSize": 5,
+      "totalQuickLaps": 54
+    },
+    {
+      "closingAverageSeconds": 71.84,
+      "deltaSeconds": -2.291,
+      "driver": "ALB",
+      "heuristic": true,
+      "openingAverageSeconds": 74.13,
+      "sampleSize": 5,
+      "totalQuickLaps": 54
+    },
+    {
+      "closingAverageSeconds": 73.727,
+      "deltaSeconds": -0.274,
+      "driver": "BOT",
+      "heuristic": true,
+      "openingAverageSeconds": 74.0,
+      "sampleSize": 5,
+      "totalQuickLaps": 46
+    }
+  ],
+  "drivers": [
+    {
+      "code": "ALB",
+      "fullName": "Alexander Albon",
+      "team": "Red Bull Racing",
+      "teamColor": "#1e41ff"
+    },
+    {
+      "code": "BOT",
+      "fullName": "Valtteri Bottas",
+      "team": "Mercedes",
+      "teamColor": "#00d2be"
+    },
+    {
+      "code": "GAS",
+      "fullName": "Pierre Gasly",
+      "team": "Toro Rosso",
+      "teamColor": "#2b4562"
+    },
+    {
+      "code": "GIO",
+      "fullName": "Antonio Giovinazzi",
+      "team": "Alfa Romeo Racing",
+      "teamColor": "#900000"
+    },
+    {
+      "code": "GRO",
+      "fullName": "Romain Grosjean",
+      "team": "Haas F1 Team",
+      "teamColor": "#bd9e57"
+    },
+    {
+      "code": "HAM",
+      "fullName": "Lewis Hamilton",
+      "team": "Mercedes",
+      "teamColor": "#00d2be"
+    },
+    {
+      "code": "HUL",
+      "fullName": "Nico Hulkenberg",
+      "team": "Renault",
+      "teamColor": "#fff500"
+    },
+    {
+      "code": "KUB",
+      "fullName": "Robert Kubica",
+      "team": "Williams",
+      "teamColor": "#00a0dd"
+    },
+    {
+      "code": "KVY",
+      "fullName": "Daniil Kvyat",
+      "team": "Toro Rosso",
+      "teamColor": "#2b4562"
+    },
+    {
+      "code": "LEC",
+      "fullName": "Charles Leclerc",
+      "team": "Ferrari",
+      "teamColor": "#da291c"
+    },
+    {
+      "code": "MAG",
+      "fullName": "Kevin Magnussen",
+      "team": "Haas F1 Team",
+      "teamColor": "#bd9e57"
+    },
+    {
+      "code": "NOR",
+      "fullName": "Lando Norris",
+      "team": "McLaren",
+      "teamColor": "#ff8000"
+    },
+    {
+      "code": "PER",
+      "fullName": "Sergio Perez",
+      "team": "Racing Point",
+      "teamColor": "#ff87bc"
+    },
+    {
+      "code": "RAI",
+      "fullName": "Kimi R\u00e4ikk\u00f6nen",
+      "team": "Alfa Romeo Racing",
+      "teamColor": "#900000"
+    },
+    {
+      "code": "RIC",
+      "fullName": "Daniel Ricciardo",
+      "team": "Renault",
+      "teamColor": "#fff500"
+    },
+    {
+      "code": "RUS",
+      "fullName": "George Russell",
+      "team": "Williams",
+      "teamColor": "#00a0dd"
+    },
+    {
+      "code": "SAI",
+      "fullName": "Carlos Sainz",
+      "team": "McLaren",
+      "teamColor": "#ff8000"
+    },
+    {
+      "code": "STR",
+      "fullName": "Lance Stroll",
+      "team": "Racing Point",
+      "teamColor": "#ff87bc"
+    },
+    {
+      "code": "VER",
+      "fullName": "Max Verstappen",
+      "team": "Red Bull Racing",
+      "teamColor": "#1e41ff"
+    },
+    {
+      "code": "VET",
+      "fullName": "Sebastian Vettel",
+      "team": "Ferrari",
+      "teamColor": "#da291c"
+    }
+  ],
+  "event": {
+    "circuit": "S\u00e3o Paulo",
+    "date": "2019-11-17 17:10:00",
+    "name": "Brazilian Grand Prix",
+    "round": 20,
+    "session": "R",
+    "year": 2019
+  },
+  "evidence": [
+    {
+      "driver": "VER",
+      "methodology": "Mean lap time across FastF1 quick laps (laps under 107% of the session's fastest lap). Headline picks require a quick-lap sample at least half the field's largest.",
+      "metric": "averagePace",
+      "sampleSize": 56,
+      "unit": "seconds",
+      "value": 72.674
+    },
+    {
+      "driver": "RUS",
+      "methodology": "Standard deviation of lap time across quick laps; lower is steadier. Headline picks require a quick-lap sample at least half the field's largest.",
+      "metric": "consistency",
+      "sampleSize": 29,
+      "unit": "seconds (standard deviation)",
+      "value": 0.413
+    },
+    {
+      "driver": "ALB",
+      "methodology": "Closing-average minus opening-average quick-lap time over the first/last sampled quick laps; heuristic, not a stint-aware tire model. Headline picks require a total quick-lap count at least half the field's largest.",
+      "metric": "degradation",
+      "sampleSize": 5,
+      "unit": "seconds",
+      "value": -2.291
+    }
+  ],
+  "generatedAt": "2026-08-17T01:45:16.885660+00:00",
+  "lapTrends": [
+    {
+      "driver": "VER",
+      "laps": [
+        {
+          "lapNumber": 2,
+          "lapTimeSeconds": 73.099
+        },
+        {
+          "lapNumber": 3,
+          "lapTimeSeconds": 73.007
+        },
+        {
+          "lapNumber": 4,
+          "lapTimeSeconds": 73.336
+        },
+        {
+          "lapNumber": 5,
+          "lapTimeSeconds": 73.462
+        },
+        {
+          "lapNumber": 6,
+          "lapTimeSeconds": 73.493
+        },
+        {
+          "lapNumber": 7,
+          "lapTimeSeconds": 73.605
+        },
+        {
+          "lapNumber": 8,
+          "lapTimeSeconds": 73.518
+        },
+        {
+          "lapNumber": 9,
+          "lapTimeSeconds": 73.683
+        },
+        {
+          "lapNumber": 10,
+          "lapTimeSeconds": 73.719
+        },
+        {
+          "lapNumber": 11,
+          "lapTimeSeconds": 73.484
+        },
+        {
+          "lapNumber": 12,
+          "lapTimeSeconds": 73.611
+        },
+        {
+          "lapNumber": 13,
+          "lapTimeSeconds": 73.664
+        },
+        {
+          "lapNumber": 14,
+          "lapTimeSeconds": 73.646
+        },
+        {
+          "lapNumber": 15,
+          "lapTimeSeconds": 73.556
+        },
+        {
+          "lapNumber": 16,
+          "lapTimeSeconds": 73.494
+        },
+        {
+          "lapNumber": 17,
+          "lapTimeSeconds": 73.689
+        },
+        {
+          "lapNumber": 18,
+          "lapTimeSeconds": 73.901
+        },
+        {
+          "lapNumber": 19,
+          "lapTimeSeconds": 73.968
+        },
+        {
+          "lapNumber": 20,
+          "lapTimeSeconds": 74.015
+        },
+        {
+          "lapNumber": 23,
+          "lapTimeSeconds": 72.448
+        },
+        {
+          "lapNumber": 24,
+          "lapTimeSeconds": 72.667
+        },
+        {
+          "lapNumber": 25,
+          "lapTimeSeconds": 72.637
+        },
+        {
+          "lapNumber": 26,
+          "lapTimeSeconds": 73.46
+        },
+        {
+          "lapNumber": 27,
+          "lapTimeSeconds": 72.927
+        },
+        {
+          "lapNumber": 28,
+          "lapTimeSeconds": 73.107
+        },
+        {
+          "lapNumber": 29,
+          "lapTimeSeconds": 73.177
+        },
+        {
+          "lapNumber": 30,
+          "lapTimeSeconds": 72.748
+        },
+        {
+          "lapNumber": 31,
+          "lapTimeSeconds": 72.58
+        },
+        {
+          "lapNumber": 32,
+          "lapTimeSeconds": 72.579
+        },
+        {
+          "lapNumber": 33,
+          "lapTimeSeconds": 72.471
+        },
+        {
+          "lapNumber": 34,
+          "lapTimeSeconds": 72.787
+        },
+        {
+          "lapNumber": 35,
+          "lapTimeSeconds": 72.747
+        },
+        {
+          "lapNumber": 36,
+          "lapTimeSeconds": 72.876
+        },
+        {
+          "lapNumber": 37,
+          "lapTimeSeconds": 72.512
+        },
+        {
+          "lapNumber": 38,
+          "lapTimeSeconds": 72.571
+        },
+        {
+          "lapNumber": 39,
+          "lapTimeSeconds": 72.655
+        },
+        {
+          "lapNumber": 40,
+          "lapTimeSeconds": 72.979
+        },
+        {
+          "lapNumber": 41,
+          "lapTimeSeconds": 73.072
+        },
+        {
+          "lapNumber": 42,
+          "lapTimeSeconds": 72.699
+        },
+        {
+          "lapNumber": 43,
+          "lapTimeSeconds": 72.858
+        },
+        {
+          "lapNumber": 46,
+          "lapTimeSeconds": 71.27
+        },
+        {
+          "lapNumber": 47,
+          "lapTimeSeconds": 70.962
+        },
+        {
+          "lapNumber": 48,
+          "lapTimeSeconds": 71.812
+        },
+        {
+          "lapNumber": 49,
+          "lapTimeSeconds": 71.874
+        },
+        {
+          "lapNumber": 50,
+          "lapTimeSeconds": 71.897
+        },
+        {
+          "lapNumber": 51,
+          "lapTimeSeconds": 72.046
+        },
+        {
+          "lapNumber": 52,
+          "lapTimeSeconds": 71.436
+        },
+        {
+          "lapNumber": 53,
+          "lapTimeSeconds": 72.324
+        },
+        {
+          "lapNumber": 60,
+          "lapTimeSeconds": 71.498
+        },
+        {
+          "lapNumber": 61,
+          "lapTimeSeconds": 70.862
+        },
+        {
+          "lapNumber": 62,
+          "lapTimeSeconds": 71.287
+        },
+        {
+          "lapNumber": 63,
+          "lapTimeSeconds": 71.156
+        },
+        {
+          "lapNumber": 64,
+          "lapTimeSeconds": 71.063
+        },
+        {
+          "lapNumber": 65,
+          "lapTimeSeconds": 71.286
+        },
+        {
+          "lapNumber": 70,
+          "lapTimeSeconds": 71.528
+        },
+        {
+          "lapNumber": 71,
+          "lapTimeSeconds": 70.911
+        }
+      ],
+      "sampleSize": 56
+    },
+    {
+      "driver": "HAM",
+      "laps": [
+        {
+          "lapNumber": 2,
+          "lapTimeSeconds": 73.458
+        },
+        {
+          "lapNumber": 3,
+          "lapTimeSeconds": 73.363
+        },
+        {
+          "lapNumber": 4,
+          "lapTimeSeconds": 73.644
+        },
+        {
+          "lapNumber": 5,
+          "lapTimeSeconds": 73.587
+        },
+        {
+          "lapNumber": 6,
+          "lapTimeSeconds": 73.447
+        },
+        {
+          "lapNumber": 7,
+          "lapTimeSeconds": 73.643
+        },
+        {
+          "lapNumber": 8,
+          "lapTimeSeconds": 73.525
+        },
+        {
+          "lapNumber": 9,
+          "lapTimeSeconds": 73.633
+        },
+        {
+          "lapNumber": 10,
+          "lapTimeSeconds": 73.677
+        },
+        {
+          "lapNumber": 11,
+          "lapTimeSeconds": 73.468
+        },
+        {
+          "lapNumber": 12,
+          "lapTimeSeconds": 73.594
+        },
+        {
+          "lapNumber": 13,
+          "lapTimeSeconds": 73.49
+        },
+        {
+          "lapNumber": 14,
+          "lapTimeSeconds": 73.479
+        },
+        {
+          "lapNumber": 15,
+          "lapTimeSeconds": 73.658
+        },
+        {
+          "lapNumber": 16,
+          "lapTimeSeconds": 73.719
+        },
+        {
+          "lapNumber": 17,
+          "lapTimeSeconds": 73.81
+        },
+        {
+          "lapNumber": 18,
+          "lapTimeSeconds": 73.704
+        },
+        {
+          "lapNumber": 19,
+          "lapTimeSeconds": 73.735
+        },
+        {
+          "lapNumber": 22,
+          "lapTimeSeconds": 73.683
+        },
+        {
+          "lapNumber": 23,
+          "lapTimeSeconds": 74.039
+        },
+        {
+          "lapNumber": 24,
+          "lapTimeSeconds": 73.164
+        },
+        {
+          "lapNumber": 25,
+          "lapTimeSeconds": 73.153
+        },
+        {
+          "lapNumber": 26,
+          "lapTimeSeconds": 73.116
+        },
+        {
+          "lapNumber": 27,
+          "lapTimeSeconds": 73.027
+        },
+        {
+          "lapNumber": 28,
+          "lapTimeSeconds": 73.043
+        },
+        {
+          "lapNumber": 29,
+          "lapTimeSeconds": 73.124
+        },
+        {
+          "lapNumber": 30,
+          "lapTimeSeconds": 73.105
+        },
+        {
+          "lapNumber": 31,
+          "lapTimeSeconds": 72.791
+        },
+        {
+          "lapNumber": 32,
+          "lapTimeSeconds": 73.029
+        },
+        {
+          "lapNumber": 33,
+          "lapTimeSeconds": 72.622
+        },
+        {
+          "lapNumber": 34,
+          "lapTimeSeconds": 72.925
+        },
+        {
+          "lapNumber": 35,
+          "lapTimeSeconds": 72.819
+        },
+        {
+          "lapNumber": 36,
+          "lapTimeSeconds": 72.591
+        },
+        {
+          "lapNumber": 37,
+          "lapTimeSeconds": 72.455
+        },
+        {
+          "lapNumber": 38,
+          "lapTimeSeconds": 72.611
+        },
+        {
+          "lapNumber": 39,
+          "lapTimeSeconds": 72.466
+        },
+        {
+          "lapNumber": 40,
+          "lapTimeSeconds": 73.402
+        },
+        {
+          "lapNumber": 41,
+          "lapTimeSeconds": 72.798
+        },
+        {
+          "lapNumber": 42,
+          "lapTimeSeconds": 72.671
+        },
+        {
+          "lapNumber": 45,
+          "lapTimeSeconds": 71.154
+        },
+        {
+          "lapNumber": 46,
+          "lapTimeSeconds": 71.082
+        },
+        {
+          "lapNumber": 47,
+          "lapTimeSeconds": 71.357
+        },
+        {
+          "lapNumber": 48,
+          "lapTimeSeconds": 71.941
+        },
+        {
+          "lapNumber": 49,
+          "lapTimeSeconds": 71.565
+        },
+        {
+          "lapNumber": 50,
+          "lapTimeSeconds": 71.846
+        },
+        {
+          "lapNumber": 51,
+          "lapTimeSeconds": 71.728
+        },
+        {
+          "lapNumber": 52,
+          "lapTimeSeconds": 71.436
+        },
+        {
+          "lapNumber": 53,
+          "lapTimeSeconds": 72.326
+        },
+        {
+          "lapNumber": 60,
+          "lapTimeSeconds": 73.255
+        },
+        {
+          "lapNumber": 61,
+          "lapTimeSeconds": 71.526
+        },
+        {
+          "lapNumber": 62,
+          "lapTimeSeconds": 71.731
+        },
+        {
+          "lapNumber": 63,
+          "lapTimeSeconds": 71.672
+        },
+        {
+          "lapNumber": 64,
+          "lapTimeSeconds": 71.413
+        },
+        {
+          "lapNumber": 65,
+          "lapTimeSeconds": 71.446
+        },
+        {
+          "lapNumber": 70,
+          "lapTimeSeconds": 75.616
+        },
+        {
+          "lapNumber": 71,
+          "lapTimeSeconds": 72.097
+        }
+      ],
+      "sampleSize": 56
+    },
+    {
+      "driver": "VET",
+      "laps": [
+        {
+          "lapNumber": 2,
+          "lapTimeSeconds": 74.104
+        },
+        {
+          "lapNumber": 3,
+          "lapTimeSeconds": 73.454
+        },
+        {
+          "lapNumber": 4,
+          "lapTimeSeconds": 73.785
+        },
+        {
+          "lapNumber": 5,
+          "lapTimeSeconds": 73.676
+        },
+        {
+          "lapNumber": 6,
+          "lapTimeSeconds": 73.579
+        },
+        {
+          "lapNumber": 7,
+          "lapTimeSeconds": 73.81
+        },
+        {
+          "lapNumber": 8,
+          "lapTimeSeconds": 73.563
+        },
+        {
+          "lapNumber": 9,
+          "lapTimeSeconds": 73.694
+        },
+        {
+          "lapNumber": 10,
+          "lapTimeSeconds": 74.081
+        },
+        {
+          "lapNumber": 11,
+          "lapTimeSeconds": 73.745
+        },
+        {
+          "lapNumber": 12,
+          "lapTimeSeconds": 73.731
+        },
+        {
+          "lapNumber": 13,
+          "lapTimeSeconds": 73.862
+        },
+        {
+          "lapNumber": 14,
+          "lapTimeSeconds": 73.913
+        },
+        {
+          "lapNumber": 15,
+          "lapTimeSeconds": 74.058
+        },
+        {
+          "lapNumber": 16,
+          "lapTimeSeconds": 73.913
+        },
+        {
+          "lapNumber": 17,
+          "lapTimeSeconds": 74.049
+        },
+        {
+          "lapNumber": 18,
+          "lapTimeSeconds": 74.129
+        },
+        {
+          "lapNumber": 19,
+          "lapTimeSeconds": 74.083
+        },
+        {
+          "lapNumber": 20,
+          "lapTimeSeconds": 74.245
+        },
+        {
+          "lapNumber": 21,
+          "lapTimeSeconds": 73.963
+        },
+        {
+          "lapNumber": 22,
+          "lapTimeSeconds": 74.224
+        },
+        {
+          "lapNumber": 23,
+          "lapTimeSeconds": 74.554
+        },
+        {
+          "lapNumber": 24,
+          "lapTimeSeconds": 74.692
+        },
+        {
+          "lapNumber": 27,
+          "lapTimeSeconds": 73.197
+        },
+        {
+          "lapNumber": 28,
+          "lapTimeSeconds": 72.259
+        },
+        {
+          "lapNumber": 29,
+          "lapTimeSeconds": 72.435
+        },
+        {
+          "lapNumber": 30,
+          "lapTimeSeconds": 72.56
+        },
+        {
+          "lapNumber": 31,
+          "lapTimeSeconds": 72.631
+        },
+        {
+          "lapNumber": 32,
+          "lapTimeSeconds": 72.347
+        },
+        {
+          "lapNumber": 33,
+          "lapTimeSeconds": 72.509
+        },
+        {
+          "lapNumber": 34,
+          "lapTimeSeconds": 72.673
+        },
+        {
+          "lapNumber": 35,
+          "lapTimeSeconds": 72.93
+        },
+        {
+          "lapNumber": 36,
+          "lapTimeSeconds": 72.937
+        },
+        {
+          "lapNumber": 37,
+          "lapTimeSeconds": 72.557
+        },
+        {
+          "lapNumber": 38,
+          "lapTimeSeconds": 72.494
+        },
+        {
+          "lapNumber": 39,
+          "lapTimeSeconds": 72.866
+        },
+        {
+          "lapNumber": 40,
+          "lapTimeSeconds": 73.364
+        },
+        {
+          "lapNumber": 41,
+          "lapTimeSeconds": 72.709
+        },
+        {
+          "lapNumber": 42,
+          "lapTimeSeconds": 72.422
+        },
+        {
+          "lapNumber": 43,
+          "lapTimeSeconds": 72.428
+        },
+        {
+          "lapNumber": 44,
+          "lapTimeSeconds": 72.727
+        },
+        {
+          "lapNumber": 45,
+          "lapTimeSeconds": 72.998
+        },
+        {
+          "lapNumber": 46,
+          "lapTimeSeconds": 72.701
+        },
+        {
+          "lapNumber": 47,
+          "lapTimeSeconds": 73.001
+        },
+        {
+          "lapNumber": 48,
+          "lapTimeSeconds": 73.172
+        },
+        {
+          "lapNumber": 51,
+          "lapTimeSeconds": 71.384
+        },
+        {
+          "lapNumber": 52,
+          "lapTimeSeconds": 71.97
+        },
+        {
+          "lapNumber": 53,
+          "lapTimeSeconds": 72.325
+        },
+        {
+          "lapNumber": 60,
+          "lapTimeSeconds": 73.982
+        },
+        {
+          "lapNumber": 61,
+          "lapTimeSeconds": 71.99
+        },
+        {
+          "lapNumber": 62,
+          "lapTimeSeconds": 71.633
+        },
+        {
+          "lapNumber": 63,
+          "lapTimeSeconds": 71.419
+        },
+        {
+          "lapNumber": 64,
+          "lapTimeSeconds": 72.106
+        },
+        {
+          "lapNumber": 65,
+          "lapTimeSeconds": 71.888
+        }
+      ],
+      "sampleSize": 54
+    },
+    {
+      "driver": "ALB",
+      "laps": [
+        {
+          "lapNumber": 2,
+          "lapTimeSeconds": 73.891
+        },
+        {
+          "lapNumber": 3,
+          "lapTimeSeconds": 74.164
+        },
+        {
+          "lapNumber": 4,
+          "lapTimeSeconds": 74.025
+        },
+        {
+          "lapNumber": 5,
+          "lapTimeSeconds": 74.172
+        },
+        {
+          "lapNumber": 6,
+          "lapTimeSeconds": 74.399
+        },
+        {
+          "lapNumber": 7,
+          "lapTimeSeconds": 74.593
+        },
+        {
+          "lapNumber": 8,
+          "lapTimeSeconds": 74.52
+        },
+        {
+          "lapNumber": 9,
+          "lapTimeSeconds": 74.683
+        },
+        {
+          "lapNumber": 10,
+          "lapTimeSeconds": 74.377
+        },
+        {
+          "lapNumber": 11,
+          "lapTimeSeconds": 74.526
+        },
+        {
+          "lapNumber": 12,
+          "lapTimeSeconds": 74.307
+        },
+        {
+          "lapNumber": 13,
+          "lapTimeSeconds": 74.227
+        },
+        {
+          "lapNumber": 14,
+          "lapTimeSeconds": 74.332
+        },
+        {
+          "lapNumber": 15,
+          "lapTimeSeconds": 74.052
+        },
+        {
+          "lapNumber": 16,
+          "lapTimeSeconds": 74.249
+        },
+        {
+          "lapNumber": 17,
+          "lapTimeSeconds": 74.27
+        },
+        {
+          "lapNumber": 18,
+          "lapTimeSeconds": 74.566
+        },
+        {
+          "lapNumber": 19,
+          "lapTimeSeconds": 74.47
+        },
+        {
+          "lapNumber": 20,
+          "lapTimeSeconds": 74.4
+        },
+        {
+          "lapNumber": 21,
+          "lapTimeSeconds": 74.102
+        },
+        {
+          "lapNumber": 22,
+          "lapTimeSeconds": 74.549
+        },
+        {
+          "lapNumber": 23,
+          "lapTimeSeconds": 75.354
+        },
+        {
+          "lapNumber": 26,
+          "lapTimeSeconds": 72.668
+        },
+        {
+          "lapNumber": 27,
+          "lapTimeSeconds": 72.855
+        },
+        {
+          "lapNumber": 28,
+          "lapTimeSeconds": 72.505
+        },
+        {
+          "lapNumber": 29,
+          "lapTimeSeconds": 72.582
+        },
+        {
+          "lapNumber": 30,
+          "lapTimeSeconds": 72.89
+        },
+        {
+          "lapNumber": 31,
+          "lapTimeSeconds": 72.677
+        },
+        {
+          "lapNumber": 32,
+          "lapTimeSeconds": 72.786
+        },
+        {
+          "lapNumber": 33,
+          "lapTimeSeconds": 72.689
+        },
+        {
+          "lapNumber": 34,
+          "lapTimeSeconds": 72.836
+        },
+        {
+          "lapNumber": 35,
+          "lapTimeSeconds": 72.932
+        },
+        {
+          "lapNumber": 36,
+          "lapTimeSeconds": 72.658
+        },
+        {
+          "lapNumber": 37,
+          "lapTimeSeconds": 72.521
+        },
+        {
+          "lapNumber": 38,
+          "lapTimeSeconds": 72.685
+        },
+        {
+          "lapNumber": 39,
+          "lapTimeSeconds": 72.946
+        },
+        {
+          "lapNumber": 40,
+          "lapTimeSeconds": 73.075
+        },
+        {
+          "lapNumber": 41,
+          "lapTimeSeconds": 72.905
+        },
+        {
+          "lapNumber": 42,
+          "lapTimeSeconds": 72.793
+        },
+        {
+          "lapNumber": 43,
+          "lapTimeSeconds": 73.202
+        },
+        {
+          "lapNumber": 44,
+          "lapTimeSeconds": 73.073
+        },
+        {
+          "lapNumber": 45,
+          "lapTimeSeconds": 73.424
+        },
+        {
+          "lapNumber": 46,
+          "lapTimeSeconds": 73.263
+        },
+        {
+          "lapNumber": 47,
+          "lapTimeSeconds": 73.499
+        },
+        {
+          "lapNumber": 48,
+          "lapTimeSeconds": 73.664
+        },
+        {
+          "lapNumber": 49,
+          "lapTimeSeconds": 74.027
+        },
+        {
+          "lapNumber": 52,
+          "lapTimeSeconds": 71.087
+        },
+        {
+          "lapNumber": 60,
+          "lapTimeSeconds": 73.444
+        },
+        {
+          "lapNumber": 61,
+          "lapTimeSeconds": 71.849
+        },
+        {
+          "lapNumber": 62,
+          "lapTimeSeconds": 71.484
+        },
+        {
+          "lapNumber": 63,
+          "lapTimeSeconds": 71.94
+        },
+        {
+          "lapNumber": 64,
+          "lapTimeSeconds": 71.645
+        },
+        {
+          "lapNumber": 65,
+          "lapTimeSeconds": 71.546
+        },
+        {
+          "lapNumber": 71,
+          "lapTimeSeconds": 72.583
+        }
+      ],
+      "sampleSize": 54
+    },
+    {
+      "driver": "BOT",
+      "laps": [
+        {
+          "lapNumber": 2,
+          "lapTimeSeconds": 74.106
+        },
+        {
+          "lapNumber": 3,
+          "lapTimeSeconds": 73.822
+        },
+        {
+          "lapNumber": 4,
+          "lapTimeSeconds": 74.274
+        },
+        {
+          "lapNumber": 5,
+          "lapTimeSeconds": 73.941
+        },
+        {
+          "lapNumber": 6,
+          "lapTimeSeconds": 73.859
+        },
+        {
+          "lapNumber": 7,
+          "lapTimeSeconds": 74.418
+        },
+        {
+          "lapNumber": 8,
+          "lapTimeSeconds": 74.081
+        },
+        {
+          "lapNumber": 9,
+          "lapTimeSeconds": 74.339
+        },
+        {
+          "lapNumber": 10,
+          "lapTimeSeconds": 74.142
+        },
+        {
+          "lapNumber": 11,
+          "lapTimeSeconds": 74.048
+        },
+        {
+          "lapNumber": 12,
+          "lapTimeSeconds": 74.118
+        },
+        {
+          "lapNumber": 13,
+          "lapTimeSeconds": 74.14
+        },
+        {
+          "lapNumber": 14,
+          "lapTimeSeconds": 73.941
+        },
+        {
+          "lapNumber": 15,
+          "lapTimeSeconds": 74.069
+        },
+        {
+          "lapNumber": 16,
+          "lapTimeSeconds": 74.011
+        },
+        {
+          "lapNumber": 17,
+          "lapTimeSeconds": 74.221
+        },
+        {
+          "lapNumber": 18,
+          "lapTimeSeconds": 74.491
+        },
+        {
+          "lapNumber": 19,
+          "lapTimeSeconds": 74.345
+        },
+        {
+          "lapNumber": 20,
+          "lapTimeSeconds": 74.398
+        },
+        {
+          "lapNumber": 21,
+          "lapTimeSeconds": 74.004
+        },
+        {
+          "lapNumber": 22,
+          "lapTimeSeconds": 74.159
+        },
+        {
+          "lapNumber": 23,
+          "lapTimeSeconds": 74.297
+        },
+        {
+          "lapNumber": 24,
+          "lapTimeSeconds": 74.314
+        },
+        {
+          "lapNumber": 25,
+          "lapTimeSeconds": 74.631
+        },
+        {
+          "lapNumber": 28,
+          "lapTimeSeconds": 72.39
+        },
+        {
+          "lapNumber": 29,
+          "lapTimeSeconds": 72.487
+        },
+        {
+          "lapNumber": 30,
+          "lapTimeSeconds": 72.736
+        },
+        {
+          "lapNumber": 31,
+          "lapTimeSeconds": 72.502
+        },
+        {
+          "lapNumber": 32,
+          "lapTimeSeconds": 72.584
+        },
+        {
+          "lapNumber": 33,
+          "lapTimeSeconds": 72.716
+        },
+        {
+          "lapNumber": 34,
+          "lapTimeSeconds": 73.179
+        },
+        {
+          "lapNumber": 35,
+          "lapTimeSeconds": 72.98
+        },
+        {
+          "lapNumber": 36,
+          "lapTimeSeconds": 72.726
+        },
+        {
+          "lapNumber": 37,
+          "lapTimeSeconds": 72.728
+        },
+        {
+          "lapNumber": 38,
+          "lapTimeSeconds": 73.234
+        },
+        {
+          "lapNumber": 39,
+          "lapTimeSeconds": 73.309
+        },
+        {
+          "lapNumber": 40,
+          "lapTimeSeconds": 73.059
+        },
+        {
+          "lapNumber": 43,
+          "lapTimeSeconds": 70.698
+        },
+        {
+          "lapNumber": 44,
+          "lapTimeSeconds": 72.088
+        },
+        {
+          "lapNumber": 45,
+          "lapTimeSeconds": 72.012
+        },
+        {
+          "lapNumber": 46,
+          "lapTimeSeconds": 74.199
+        },
+        {
+          "lapNumber": 47,
+          "lapTimeSeconds": 73.6
+        },
+        {
+          "lapNumber": 48,
+          "lapTimeSeconds": 73.397
+        },
+        {
+          "lapNumber": 49,
+          "lapTimeSeconds": 74.178
+        },
+        {
+          "lapNumber": 50,
+          "lapTimeSeconds": 74.089
+        },
+        {
+          "lapNumber": 51,
+          "lapTimeSeconds": 73.369
+        }
+      ],
+      "sampleSize": 46
+    }
+  ],
+  "methodology": {
+    "averagePace": "Mean lap time across a driver's quick laps, ranked fastest to slowest.",
+    "consistency": "Standard deviation of lap time across a driver's quick laps; lower is steadier.",
+    "degradation": "Heuristic comparison of the mean of a driver's first N quick laps against the mean of their last N quick laps (N=5 by default, reduced for drivers with fewer quick laps). Not a stint-aware tire model.",
+    "quickLapDefinition": "A quick lap is any lap under 107% of the fastest single lap time recorded by any driver in the session (FastF1 pick_quicklaps() default). This excludes in/out laps and most pit-affected laps, but does not explicitly detect safety car or virtual safety car periods.",
+    "topDriverSelection": "Lap-trend and degradation views are limited to the top 5 drivers by average quick-lap pace."
+  },
+  "paceRanking": [
+    {
+      "averageLapTimeSeconds": 72.674,
+      "driver": "VER",
+      "gapToFastestSeconds": 0.0,
+      "rank": 1,
+      "sampleSize": 56
+    },
+    {
+      "averageLapTimeSeconds": 72.865,
+      "driver": "HAM",
+      "gapToFastestSeconds": 0.192,
+      "rank": 2,
+      "sampleSize": 56
+    },
+    {
+      "averageLapTimeSeconds": 73.139,
+      "driver": "VET",
+      "gapToFastestSeconds": 0.466,
+      "rank": 3,
+      "sampleSize": 54
+    },
+    {
+      "averageLapTimeSeconds": 73.388,
+      "driver": "ALB",
+      "gapToFastestSeconds": 0.715,
+      "rank": 4,
+      "sampleSize": 54
+    },
+    {
+      "averageLapTimeSeconds": 73.575,
+      "driver": "BOT",
+      "gapToFastestSeconds": 0.901,
+      "rank": 5,
+      "sampleSize": 46
+    },
+    {
+      "averageLapTimeSeconds": 73.695,
+      "driver": "LEC",
+      "gapToFastestSeconds": 1.022,
+      "rank": 6,
+      "sampleSize": 56
+    },
+    {
+      "averageLapTimeSeconds": 74.003,
+      "driver": "RIC",
+      "gapToFastestSeconds": 1.329,
+      "rank": 7,
+      "sampleSize": 50
+    },
+    {
+      "averageLapTimeSeconds": 74.156,
+      "driver": "GAS",
+      "gapToFastestSeconds": 1.482,
+      "rank": 8,
+      "sampleSize": 54
+    },
+    {
+      "averageLapTimeSeconds": 74.253,
+      "driver": "PER",
+      "gapToFastestSeconds": 1.58,
+      "rank": 9,
+      "sampleSize": 48
+    },
+    {
+      "averageLapTimeSeconds": 74.275,
+      "driver": "RAI",
+      "gapToFastestSeconds": 1.601,
+      "rank": 10,
+      "sampleSize": 52
+    },
+    {
+      "averageLapTimeSeconds": 74.352,
+      "driver": "GIO",
+      "gapToFastestSeconds": 1.679,
+      "rank": 11,
+      "sampleSize": 52
+    },
+    {
+      "averageLapTimeSeconds": 74.408,
+      "driver": "KVY",
+      "gapToFastestSeconds": 1.734,
+      "rank": 12,
+      "sampleSize": 47
+    },
+    {
+      "averageLapTimeSeconds": 74.453,
+      "driver": "SAI",
+      "gapToFastestSeconds": 1.779,
+      "rank": 13,
+      "sampleSize": 50
+    },
+    {
+      "averageLapTimeSeconds": 74.498,
+      "driver": "MAG",
+      "gapToFastestSeconds": 1.824,
+      "rank": 14,
+      "sampleSize": 43
+    },
+    {
+      "averageLapTimeSeconds": 74.597,
+      "driver": "NOR",
+      "gapToFastestSeconds": 1.924,
+      "rank": 15,
+      "sampleSize": 51
+    },
+    {
+      "averageLapTimeSeconds": 74.635,
+      "driver": "HUL",
+      "gapToFastestSeconds": 1.961,
+      "rank": 16,
+      "sampleSize": 46
+    },
+    {
+      "averageLapTimeSeconds": 74.654,
+      "driver": "GRO",
+      "gapToFastestSeconds": 1.981,
+      "rank": 17,
+      "sampleSize": 49
+    },
+    {
+      "averageLapTimeSeconds": 74.671,
+      "driver": "STR",
+      "gapToFastestSeconds": 1.998,
+      "rank": 18,
+      "sampleSize": 49
+    },
+    {
+      "averageLapTimeSeconds": 74.962,
+      "driver": "RUS",
+      "gapToFastestSeconds": 2.288,
+      "rank": 19,
+      "sampleSize": 29
+    },
+    {
+      "averageLapTimeSeconds": 75.102,
+      "driver": "KUB",
+      "gapToFastestSeconds": 2.428,
+      "rank": 20,
+      "sampleSize": 8
+    }
+  ],
+  "summary": {
+    "fastestAveragePaceDriver": "VER",
+    "largestPaceDeclineDriver": null,
+    "mostConsistentDriver": "RUS",
+    "strongestLateRaceDriver": "ALB"
+  },
+  "warnings": [
+    "KUB had the lowest raw lap-time variance but only 8 quick laps and was excluded from the headline pick as an unrepresentative sample.",
+    "No eligible driver's closing quick-lap pace was slower than their opening pace this session, so RaceIQ did not name a largest-pace-decline headline."
+  ]
+}

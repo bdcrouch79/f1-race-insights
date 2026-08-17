@@ -11,6 +11,10 @@ export interface ArchiveEntry {
   eventSlug: string;
   analysis: RaceAnalysis;
   isSample: boolean;
+  /** Editorial metadata from data/race-manifest.json, when this race has a matching entry. */
+  category?: string;
+  featured?: boolean;
+  description?: string;
 }
 
 export function ArchiveGrid({ entries }: { entries: ArchiveEntry[] }) {
@@ -62,15 +66,26 @@ export function ArchiveGrid({ entries }: { entries: ArchiveEntry[] }) {
           {filtered.map((entry) => (
             <li key={`${entry.year}-${entry.eventSlug}`}>
               <Link href={`/race/${entry.year}/${entry.eventSlug}`} className="riq-panel riq-hover-lift block h-full p-5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <p className="font-display text-lg text-riq-white">{entry.analysis.event.name}</p>
-                  {entry.isSample ? (
-                    <span className="rounded-full border border-riq-orange/40 px-2 py-0.5 text-[10px] uppercase text-riq-orange">
-                      Sample
-                    </span>
-                  ) : null}
+                  <div className="flex shrink-0 gap-1.5">
+                    {entry.featured ? (
+                      <span className="rounded-full border border-riq-cyan/40 px-2 py-0.5 text-[10px] uppercase text-riq-cyan">
+                        Featured
+                      </span>
+                    ) : null}
+                    {entry.isSample ? (
+                      <span className="rounded-full border border-riq-orange/40 px-2 py-0.5 text-[10px] uppercase text-riq-orange">
+                        Sample
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
-                <p className="text-sm text-riq-gray">{entry.year}</p>
+                <p className="text-sm text-riq-gray">
+                  {entry.year}
+                  {entry.category ? ` · ${entry.category.replace(/-/g, " ")}` : ""}
+                </p>
+                {entry.description ? <p className="mt-2 text-sm text-riq-gray">{entry.description}</p> : null}
                 <div className="mt-3">
                   <AvailabilityBadges availability={entry.analysis.availability} />
                 </div>
