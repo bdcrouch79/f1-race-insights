@@ -361,6 +361,16 @@ against known-correct numbers, not by asserting the code "should" be correct -- 
 this repository's established practice (see the three Monaco 2024 fixes above) of verifying
 generated/rendered output rather than trusting arithmetic in isolation.
 
+**No new runtime dependencies**: entrance motion and the racing-line backdrop are CSS-only
+(`app/globals.css`, `prefers-reduced-motion`-guarded); `CollapsibleSection` uses a native
+`<details>` element. No animation or disclosure library was added.
+
+**Deployment**: `raceiq-web` was already live on Cloudflare Workers before this change (Phase 1's
+merge to `main` triggered the first deploy). This change follows the same path -- merge to `main`,
+let `.github/workflows/deploy-cloudflare.yml` deploy automatically, then verify the live URL
+directly rather than assuming a green workflow run means the public site reflects the new
+experience. See `docs/CURRENT_STATE.md` for the verified result.
+
 ## 2026-08-17 -- P0: the deployed Worker rendered zero races (build-time static import replaces runtime `fs`)
 
 **Constraint**: Bryan reported the live `raceiq-web.bryan-7df.workers.dev` Worker rendered zero
@@ -453,12 +463,14 @@ yet verified** -- see `docs/CURRENT_STATE.md` for the exact outstanding verifica
 this is considered fixed in production, per Bryan's explicit instruction not to call this done
 until the actual deployed `workers.dev` URL is checked directly.
 
-**No new runtime dependencies**: entrance motion and the racing-line backdrop are CSS-only
-(`app/globals.css`, `prefers-reduced-motion`-guarded); `CollapsibleSection` uses a native
-`<details>` element. No animation or disclosure library was added.
-
-**Deployment**: `raceiq-web` was already live on Cloudflare Workers before this change (Phase 1's
-merge to `main` triggered the first deploy). This change follows the same path -- merge to `main`,
-let `.github/workflows/deploy-cloudflare.yml` deploy automatically, then verify the live URL
-directly rather than assuming a green workflow run means the public site reflects the new
-experience. See `docs/CURRENT_STATE.md` for the verified result.
+**Addendum -- the first deploy of this fix itself exposed a flaky post-deploy check**: merging this
+fix and letting `deploy-cloudflare.yml` redeploy, its own new "Verify the deployed Worker actually
+serves real races" step failed: HTTP 200 with zero cards, 8 seconds after `wrangler deploy` reported
+success -- even though the exact same build's `npm run verify:worker` (the real local Workers
+runtime, moments earlier in the same job) passed every check, including real card counts. That gap
+points at Cloudflare's global edge/cache propagation lagging the deploy API's success response, not
+a defect in this fix's code. A single check after a fixed `sleep 8` can't distinguish "still
+propagating" from "actually broken," so it isn't trustworthy as a gate either way. Replaced with a
+loop that retries every 10s for up to 90s and only fails the workflow if the real content still
+isn't there by the deadline, and now also logs the `cf-cache-status` response header on every
+attempt for diagnosis. This is a workflow-robustness fix, not a rollback of anything above.
