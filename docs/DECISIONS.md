@@ -361,6 +361,98 @@ against known-correct numbers, not by asserting the code "should" be correct -- 
 this repository's established practice (see the three Monaco 2024 fixes above) of verifying
 generated/rendered output rather than trusting arithmetic in isolation.
 
+## 2026-08-17 -- P0: the deployed Worker rendered zero races (build-time static import replaces runtime `fs`)
+
+**Constraint**: Bryan reported the live `raceiq-web.bryan-7df.workers.dev` Worker rendered zero
+races -- empty hero, no featured race, no cards, empty filters -- despite the manifest and all 21
+generated JSON files being committed on `main` and CI validating them. He correctly identified the
+likely cause up front: `apps/web/lib/raceData.ts`/`raceManifest.ts` derived the repository root via
+`path.resolve(process.cwd(), "..", "..")` and read `data/**` with `node:fs`, which works under
+`next start`/`next build` (a real Node.js process where `process.cwd()` means something) but is
+not a valid assumption inside a deployed `@opennextjs/cloudflare` Worker.
+
+**Root cause, confirmed empirically, not just inferred from the report**: reproduced the exact
+symptom locally by running the real Cloudflare Workers runtime (`wrangler dev --local`, i.e.
+`workerd`/Miniflare) rather than `next start` -- the homepage rendered 25,287 bytes with zero race
+cards (vs. 464,550 bytes / 20 cards from a normal build). Cloudflare Workers have no persistent
+filesystem at request time; `fs.readFileSync`/`fs.existsSync` against the `process.cwd()`-derived
+path don't throw in that environment, they just silently return nothing, so every list came back
+empty with no error anywhere in the logs. `next.config.ts`'s `outputFileTracingIncludes` copying
+`data/**` into `.open-next/` was necessary but never sufficient: it puts the files somewhere in the
+Worker's bundle, but nothing guarantees the runtime `fs` path used by `raceData.ts` resolves to
+that location inside a V8 isolate with no real filesystem. This is exactly why the bug shipped
+undetected: `next build`, browser checks against `next start`, and the deploy workflow's own
+post-deploy check (HTTP-200-only, and gated behind a `CLOUDFLARE_ACCOUNT_SUBDOMAIN` repo variable
+that was never actually set, so it silently never ran) all either use a real Node.js process or
+only check a status code -- none of them exercise the actual Workers runtime with a request-time
+filesystem lookup, which is the one thing that differs.
+
+**Decision**: eliminate runtime filesystem discovery entirely rather than patch the path
+resolution. `apps/web/scripts/build-data.mjs` is a new, standalone build-time script (never bundled
+into the app; excluded from ESLint/TypeScript's app source) that transforms the committed
+`data/generated/**`, `data/race-manifest.json`, `data/fixtures/demo-race.json`, and
+`assets/cd-mark.png` into app-owned JSON artifacts under `apps/web/data/*.json`. `lib/raceData.ts`,
+`lib/raceManifest.ts`, and `opengraph-image.tsx` now `import` those files as static JSON modules
+instead of reading anything with `node:fs`/`path`/`process.cwd()` -- webpack inlines a static
+`import` into the built JS bundle at build time, so there is no runtime path to resolve and no
+filesystem dependency at all, on any platform. `next.config.ts`'s `outputFileTracingIncludes` was
+removed as no longer needed. `npm run generate:data` runs the script; `predev`/`prebuild`/
+`prelint`/`pretypecheck`/`pretest`/`precf:build`/`precf:preview`/`precf:deploy` all run it first,
+and both GitHub Actions workflows (`ci.yml`, `deploy-cloudflare.yml`) also call it as an explicit
+step, since CI invokes `npx eslint .` directly and bypasses the `prelint` hook. The Python engine,
+its JSON contract, and every committed `data/generated/**` file are unchanged -- this is a
+frontend data-loading fix only, per Bryan's explicit instruction not to touch the analysis engine.
+
+**A second, independent bug was found fixing the first one, verifying against the real runtime**:
+with the data-loading fix in place, `npm run verify:worker` (new: boots the actual Workers runtime
+and checks real content, see below) showed the homepage/archive/sitemap now worked, but every
+individual race report page (`/race/[year]/[event]`) still 404'd, while its sibling OG image route
+in the same folder returned 200. Confirmed this predates this session entirely: `/race/2024/monaco-
+grand-prix`, the most-verified race in the repository, also 404'd on the real runtime -- meaning
+race reports had likely never actually worked on the deployed Worker; nobody had checked with
+anything other than `next start` or an HTTP-status-only curl before. Root cause (found by querying
+`wrangler dev`'s own local observability log for the real server-side error, not by guessing):
+`/race/[year]/[event]/page.tsx` declared `dynamicParams = false`, originally written to force a
+404 for unlisted paths rather than let them hit the old `fs`-based crash. With no R2/KV binding
+configured for OpenNext's incremental cache, every cache lookup misses (`"dummy"` cache, always a
+miss), and for a `dynamicParams: false` SSG route a cache miss makes Next's own server throw
+`NoFallbackError` and return 404 -- even for a path that genuinely was prerendered at build time.
+The OG image route also declares `dynamicParams: false` but is compiled through a different code
+path (a metadata image route, not a page render) that isn't gated by this same cache lookup, which
+is why it never showed the symptom. **Fix**: `dynamicParams = true` (Next's actual default) in
+`page.tsx`, since the filesystem-crash risk that justified `false` no longer exists -- rendering
+any path live is now just a static-imported array lookup, safe regardless of whether the path was
+in `generateStaticParams`. See `docs/ARCHITECTURE.md` ("Static routing and the Cloudflare
+incremental cache") for the full mechanism.
+
+**New regression coverage, so this class of bug can't silently ship again**:
+- `apps/web/tests/productionDataRegression.test.ts` (vitest): exercises the real production code
+  path (`listGeneratedAnalyses`, `buildLibraryEntries`, `findManifestEntry`) against the real
+  build-generated data artifact, asserting more than zero real races, every race is
+  `dataSource: "generated"`, at least one is featured, and the manifest join actually attaches
+  metadata. Catches a regression at the data-loading layer, fast, in `npm run test`.
+- `apps/web/scripts/verify-worker-runtime.mjs` (new, `npm run verify:worker`): boots the actual
+  `wrangler dev --local` Workers runtime against a real `cf:build` output and asserts the homepage,
+  archive, sitemap, and spot-checked real race report + OG image routes all return real content --
+  the check that would have caught both bugs in this entry directly, because it's the only one that
+  exercises `workerd` itself rather than `next start` or a bare HTTP status code. Wired into both
+  `.github/workflows/ci.yml` (after `cf:build`) and `deploy-cloudflare.yml` (after `cf:build`,
+  before the actual Cloudflare deploy step).
+- `deploy-cloudflare.yml`'s post-deploy verification step was rewritten from a status-code-only
+  check that was also gated behind an unset `CLOUDFLARE_ACCOUNT_SUBDOMAIN` repo variable (so it
+  silently never ran) into an unconditional check of the real deployed URL's response body for
+  actual race cards.
+
+**Consequences**: no change to `ANALYSIS_VERSION`, the Python engine, or any committed
+`data/generated/**` file -- this was purely a frontend build/deploy architecture fix. The
+`docs/DATA_AVAILABILITY.md`-style guidance and `.gitignore`'s existing `/apps/web/data/` entry
+(previously commented as being "for Next's file tracing") now serves a different purpose --
+excluding the `build-data.mjs`-generated artifacts, which are build output, not source.
+Confirmed working against the real Workers runtime locally; **the live deployment itself is not
+yet verified** -- see `docs/CURRENT_STATE.md` for the exact outstanding verification step before
+this is considered fixed in production, per Bryan's explicit instruction not to call this done
+until the actual deployed `workers.dev` URL is checked directly.
+
 **No new runtime dependencies**: entrance motion and the racing-line backdrop are CSS-only
 (`app/globals.css`, `prefers-reduced-motion`-guarded); `CollapsibleSection` uses a native
 `<details>` element. No animation or disclosure library was added.

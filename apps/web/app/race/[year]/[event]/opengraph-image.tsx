@@ -1,21 +1,19 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { ImageResponse } from "next/og";
 
 import { buildDriverInfo } from "@/lib/driverInfo";
 import { filterEligibleForHeadline } from "@/lib/headlineEligibility";
 import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/lib/raceData";
 
-// This route is fully statically generated (see generateStaticParams
-// below), so this file read only ever happens at build time, when the
-// full monorepo checkout -- including /assets -- is present. No special
-// deployment bundling needed for it, unlike data/** (see next.config.ts).
-const CD_MARK_DATA_URI = (() => {
-  const markPath = path.resolve(process.cwd(), "..", "..", "assets", "cd-mark.png");
-  const bytes = fs.readFileSync(markPath);
-  return `data:image/png;base64,${bytes.toString("base64")}`;
-})();
+import cdMarkData from "../../../../data/cd-mark.json";
+
+// Bundled at build time by scripts/build-data.mjs, imported statically
+// -- no node:fs at runtime. A previous process.cwd()-relative
+// fs.readFileSync here worked under `next build`/`next start` (a real
+// Node.js filesystem) but would silently fail the same way the race
+// data did once this route falls back to a live render on Cloudflare
+// Workers (no persistent filesystem). See lib/raceData.ts and
+// docs/DECISIONS.md (2026-08-17).
+const CD_MARK_DATA_URI: string | null = (cdMarkData as { dataUri: string | null }).dataUri;
 
 export const runtime = "nodejs";
 export const alt = "RaceIQ race analysis card";
@@ -150,7 +148,7 @@ export default async function OpengraphImage({ params }: { params: Promise<{ yea
         </div>
 
         <div style={{ display: "flex", alignItems: "center", marginTop: 18, paddingTop: 18, borderTop: `1px solid ${COLORS.panel}`, gap: 12 }}>
-          <img src={CD_MARK_DATA_URI} width={22} height={24} alt="" />
+          {CD_MARK_DATA_URI ? <img src={CD_MARK_DATA_URI} width={22} height={24} alt="" /> : null}
           <div style={{ display: "flex", fontSize: 15, color: COLORS.gray }}>
             Built by Crouch Development · Independent motorsport analytics, not affiliated with Formula 1, the FIA, any team, or any driver.
           </div>

@@ -43,10 +43,21 @@ jobs:
 
       - run: npm install
 
+      # Bundles data/generated/**, data/race-manifest.json,
+      # data/fixtures/demo-race.json, and assets/cd-mark.png into
+      # apps/web/data/*.json for static import -- run explicitly since
+      # `npx eslint .` below bypasses npm's "prelint" hook. See
+      # docs/DECISIONS.md (2026-08-17).
+      - run: npm run generate:data
       - run: npm run typecheck
       - run: npx eslint .
       - run: npm run test
       - run: npm run cf:build
+      # Boots the real Cloudflare Workers runtime against this exact
+      # build before it gets deployed -- the check that would have
+      # caught the 2026-08-17 incident (deployed site rendered zero
+      # races). See scripts/verify-worker-runtime.mjs.
+      - run: npm run verify:worker
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy
@@ -72,13 +83,31 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify the deployed Worker responds
+      # A previous version of this step only checked for HTTP 200 --
+      # which is exactly what the 2026-08-17 incident returned while
+      # rendering zero races, so it never caught anything. This checks
+      # the actual response body for real content, and is unconditional
+      # (the earlier version was silently skipped because
+      # CLOUDFLARE_ACCOUNT_SUBDOMAIN was never set as a repo variable).
+      # A failure here does not roll back the deploy -- Cloudflare
+      # Workers has no built-in automatic rollback wired up here -- but
+      # it does fail the workflow loudly instead of reporting green
+      # while production is broken. See docs/DECISIONS.md (2026-08-17).
+      - name: Verify the deployed Worker actually serves real races
         run: |
-          sleep 5
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://raceiq-web.${{ secrets.CLOUDFLARE_ACCOUNT_SUBDOMAIN }}.workers.dev/" || echo "000")
+          sleep 8
+          URL="https://raceiq-web.bryan-7df.workers.dev/"
+          BODY=$(curl -s "$URL" || echo "")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+          CARD_COUNT=$(printf '%s' "$BODY" | grep -o "View Report" | wc -l | tr -d ' ')
+          echo "HTTP status: $STATUS"
+          echo "Race cards found on homepage: $CARD_COUNT"
           if [ "$STATUS" != "200" ]; then
-            echo "::warning::Deployed Worker returned HTTP $STATUS instead of 200 -- verify manually. (Skipped entirely if CLOUDFLARE_ACCOUNT_SUBDOMAIN isn't set.)"
-          else
-            echo "Deployed Worker responded 200 OK."
+            echo "::error::Deployed Worker returned HTTP $STATUS instead of 200."
+            exit 1
           fi
-        if: ${{ vars.CLOUDFLARE_ACCOUNT_SUBDOMAIN != '' }}
+          if [ "$CARD_COUNT" -eq 0 ]; then
+            echo "::error::Deployed homepage returned HTTP 200 but rendered zero race cards. This is the exact 2026-08-17 incident signature -- see docs/DECISIONS.md."
+            exit 1
+          fi
+          echo "Deployed Worker responded 200 OK with $CARD_COUNT real race card(s) on the homepage."

@@ -31,7 +31,21 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm install
+      # Bundles data/generated/**, data/race-manifest.json,
+      # data/fixtures/demo-race.json, and assets/cd-mark.png into
+      # apps/web/data/*.json for static import. Run explicitly (not
+      # relying on npm's "pre<script>" hooks alone) because the next
+      # step invokes eslint directly via npx, which bypasses any
+      # "prelint" hook. See docs/DECISIONS.md (2026-08-17).
+      - run: npm run generate:data
       - run: npm run typecheck
       - run: npx eslint .
       - run: npm run test
       - run: npm run build
+      - run: npm run cf:build
+      # Boots the real Cloudflare Workers runtime (workerd, via
+      # wrangler dev) against the built bundle and asserts real race
+      # content is present -- the check that would have caught the
+      # 2026-08-17 incident (deployed site rendered zero races) before
+      # it ever reached production. See scripts/verify-worker-runtime.mjs.
+      - run: npm run verify:worker

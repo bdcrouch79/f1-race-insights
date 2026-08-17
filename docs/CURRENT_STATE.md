@@ -4,6 +4,52 @@ Last verified: 2026-08-17
 
 ## Implemented
 
+### P0 fix: deployed Worker rendered zero races (2026-08-17)
+
+Bryan reported the live Worker showed an empty hero, no featured race, no cards, and empty
+filters, despite all 21 JSON files being committed and CI-validated. Confirmed and fixed the
+architecture, not the symptom -- see `docs/DECISIONS.md` for the full root-cause writeup and
+`docs/ARCHITECTURE.md` ("Frontend data access", "Static routing and the Cloudflare incremental
+cache") for the mechanism. Summary:
+
+1. **Runtime `node:fs` reads against `process.cwd()`-derived paths silently returned nothing
+   inside the deployed Cloudflare Worker** (no persistent filesystem at request time -- reproduced
+   locally via `wrangler dev --local`, not just inferred). Fixed by eliminating runtime filesystem
+   access entirely: `apps/web/scripts/build-data.mjs` (new) transforms the committed manifest and
+   generated analyses into `apps/web/data/*.json` at build time, and `lib/raceData.ts`,
+   `lib/raceManifest.ts`, and `opengraph-image.tsx` now `import` those files as static JSON
+   modules -- inlined into the JS bundle by webpack, zero runtime filesystem dependency on any
+   platform. `next.config.ts`'s `outputFileTracingIncludes` was removed as no longer needed.
+2. **A second, independent, pre-existing bug found while verifying the first fix against the real
+   Workers runtime**: every race report page 404'd (while its OG image route worked), because
+   `dynamicParams = false` combined with this Worker's unconfigured incremental cache made Next
+   throw `NoFallbackError` on every request. Fixed by setting `dynamicParams = true` -- safe now
+   that rendering any path live is just a static-imported array lookup, not a filesystem read.
+3. **New regression coverage**: `apps/web/tests/productionDataRegression.test.ts` (vitest, exercises
+   real production code against real build data) and `apps/web/scripts/verify-worker-runtime.mjs`
+   (`npm run verify:worker` -- boots the actual `wrangler dev` Workers runtime and checks real
+   content on the homepage, archive, sitemap, and spot-checked race reports + OG images). Both are
+   now wired into `.github/workflows/ci.yml` and `deploy-cloudflare.yml`. The deploy workflow's
+   post-deploy check was also rewritten from a status-code-only check (previously gated behind an
+   unset repo variable, so it silently never ran) to check the live URL's response body for real
+   race cards.
+
+**Root cause for documentation**: local `next start`/browser verification and even the previous
+deploy workflow's HTTP-status-only check never reproduced the Cloudflare Worker's actual runtime
+filesystem layout (no persistent filesystem) or its actual cache behavior (no incremental-cache
+binding configured, so every lookup misses). Both bugs in this entry were only found by running
+the real `workerd`/`wrangler dev --local` runtime directly and inspecting its own request traces
+and console logs -- not by any check that used `next start`, `next build`, or a bare curl status
+code. `scripts/verify-worker-runtime.mjs` now makes that the standard local and CI check going
+forward.
+
+**Verified so far**: JSON validation (21/21), Python tests (29 passed), frontend typecheck/lint/
+`npm run test` (76 passed), `npm run build`, `npm run cf:build`, and `npm run verify:worker`
+against the real local Workers runtime -- all passing, including every race report and OG image
+route spot-checked. **Not yet verified**: the actual deployed `workers.dev` URL after this change
+merges and redeploys -- see "Exact next action" below. Per explicit instruction, this fix is not
+considered complete and Bryan OS is not updated until that direct check happens.
+
 ### Phase 2: RaceIQ Showcase Rebuild
 
 Transforms RaceIQ from a technical report viewer into a visually-led showcase, without touching
@@ -170,7 +216,10 @@ already-fixed v1.1.1 engine and were spot-checked in the browser during Phase 2 
   same class of restriction already documented here for FastF1's data hosts. The deploy pipeline's
   own success and the new version ID are real evidence that the new build is live; a direct
   browser check of the public URL is the one verification step only Bryan (or a
-  network-unrestricted session) can complete.
+  network-unrestricted session) can complete. **This description predates the 2026-08-17 P0 fix**
+  (see above) -- that fix has not yet merged/redeployed as of this writing, so the live Worker at
+  this URL is still the broken (zero-races) build until the P0 fix's own deploy completes and is
+  verified per "Exact next action" item 4 below.
 - **Production domain**: none attached yet (target: `raceiq.crouchdevelopment.com`; attaching it
   is a separate, deliberate step in the Cloudflare dashboard, not performed by the deploy
   workflow or by this change).
@@ -191,10 +240,18 @@ already-fixed v1.1.1 engine and were spot-checked in the browser during Phase 2 
 2. ~~Deploy the frontend.~~ Done -- `raceiq-web` is live on `*.workers.dev` and auto-deploys on
    push to `main`.
 3. ~~Rebuild the showcase experience (Phase 2).~~ Done -- see above.
-4. Attach the `raceiq.crouchdevelopment.com` custom domain once Bryan is ready for it to be the
+4. **Manually verify the deployed `https://raceiq-web.bryan-7df.workers.dev` URL directly** after
+   this P0 fix merges and `deploy-cloudflare.yml` redeploys: hero shows 20 races, a featured race,
+   20 race cards, populated season/category/driver filters, at least three real race reports return
+   200 with content, the archive is populated, an OG image route returns 200, and the sitemap lists
+   every race URL. This sandbox's egress policy blocks `*.workers.dev` (same restriction already
+   documented for FastF1's hosts), so this session cannot complete this step itself -- it requires
+   Bryan or a network-unrestricted session. **This fix is not considered complete until this check
+   happens** -- see `docs/DECISIONS.md` (2026-08-17).
+5. Attach the `raceiq.crouchdevelopment.com` custom domain once Bryan is ready for it to be the
    public-facing URL (Cloudflare dashboard: the Worker's Settings -> Domains & Routes -> Add
    Custom Domain). Not done as part of this change -- it's a deliberate, separate step per
    `docs/ARCHITECTURE.md`.
-5. When Bryan explicitly decides to resume the Weekend Brief: create the Brevo list, sender, and
+6. When Bryan explicitly decides to resume the Weekend Brief: create the Brevo list, sender, and
    attributes; add `BREVO_API_KEY` as a GitHub secret; and re-render `WeekendBriefForm` in a
    follow-up change. Not started -- out of scope for Phase 2 by explicit instruction.

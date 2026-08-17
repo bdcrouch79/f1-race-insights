@@ -1,19 +1,21 @@
-import fs from "node:fs";
-import path from "node:path";
+import raceManifestData from "../data/race-manifest.json";
 
 /**
  * RaceIQ's curated race library manifest (data/race-manifest.json,
  * see scripts/build-race-library.ps1 and scripts/generate_batch.py).
- * Server-only: reads from the filesystem, the same pattern as
- * lib/raceData.ts. Provides editorial metadata -- category, featured
- * status, and a short neutral description -- for races that also have
- * a real generated analysis. A race that hasn't been generated yet,
- * or a generated race with no matching manifest entry, simply renders
+ * Bundled at build time by scripts/build-data.mjs and imported
+ * statically here -- no node:fs at runtime. See lib/raceData.ts and
+ * docs/DECISIONS.md (2026-08-17) for why: a previous fs-based
+ * implementation worked locally but silently returned empty data once
+ * deployed to Cloudflare Workers, which have no persistent filesystem
+ * at request time.
+ *
+ * Provides editorial metadata -- category, featured status, and a
+ * short neutral description -- for races that also have a real
+ * generated analysis. A race that hasn't been generated yet, or a
+ * generated race with no matching manifest entry, simply renders
  * without this metadata; it's additive, never required.
  */
-
-const REPO_ROOT = path.resolve(process.cwd(), "..", "..");
-const MANIFEST_PATH = path.join(REPO_ROOT, "data", "race-manifest.json");
 
 export interface RaceManifestEntry {
   year: number;
@@ -24,24 +26,9 @@ export interface RaceManifestEntry {
   description: string;
 }
 
-let cachedEntries: RaceManifestEntry[] | null = null;
-
-function loadManifestEntries(): RaceManifestEntry[] {
-  if (cachedEntries) return cachedEntries;
-  if (!fs.existsSync(MANIFEST_PATH)) {
-    cachedEntries = [];
-    return cachedEntries;
-  }
-  try {
-    const raw = fs.readFileSync(MANIFEST_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as { races?: unknown };
-    cachedEntries = Array.isArray(parsed.races) ? (parsed.races as RaceManifestEntry[]) : [];
-  } catch (error) {
-    console.error("RaceIQ: invalid race manifest at data/race-manifest.json", error);
-    cachedEntries = [];
-  }
-  return cachedEntries;
-}
+const MANIFEST_ENTRIES: RaceManifestEntry[] = Array.isArray((raceManifestData as { races?: unknown }).races)
+  ? ((raceManifestData as { races: RaceManifestEntry[] }).races)
+  : [];
 
 /**
  * A manifest `event` query is a country/location name (what FastF1's
@@ -76,7 +63,7 @@ const EVENT_NAME_ALIASES: Record<string, string[]> = {
  */
 export function findManifestEntry(year: string, eventName: string): RaceManifestEntry | null {
   const normalizedName = eventName.trim().toLowerCase();
-  const candidates = loadManifestEntries().filter((entry) => String(entry.year) === year);
+  const candidates = MANIFEST_ENTRIES.filter((entry) => String(entry.year) === year);
   const match = candidates.find((entry) => {
     const query = entry.event.trim().toLowerCase();
     if (normalizedName.includes(query)) return true;
