@@ -58,15 +58,23 @@ passed every check. That points at Cloudflare edge/cache propagation lagging the
 success response, not a defect in the fix itself. Replaced the single fixed-`sleep 8` check with a
 90-second retry loop (see `docs/DECISIONS.md` addendum) and re-deployed via a follow-up PR.
 
-**Not yet verified**: the actual deployed `workers.dev` URL, directly, by a human or a
-network-unrestricted session. This sandbox's egress policy blocks `*.workers.dev` (confirmed again
-this session: `connect_rejected`, HTTP 403 via `$HTTPS_PROXY/__agentproxy/status`) -- the same
-restriction already documented here for FastF1's hosts -- so this session can only rely on
-`deploy-cloudflare.yml`'s own post-deploy check (which does run on GitHub's real network and does
-fetch the real live URL) as automated evidence, not on curling the site directly itself. Per
-explicit instruction, this fix is not considered complete and Bryan OS is not updated until a
-direct check of the live URL happens -- see "Exact next action" below for the exact outstanding
-step and who needs to do it.
+**Follow-up deploy (PR #4's merge, 2026-08-17) confirmed the theory and passed immediately**: with
+the retry loop in place, the redeploy (new Worker version `d83c7deb-2ca1-4577-b740-a533d82cf353`)
+was checked 20 seconds after `wrangler deploy` reported success and passed on the **first**
+attempt -- no retries needed: `Attempt 1: HTTP status 200, 20 race card(s), no cf-cache-status
+header`. Same code as the failed first attempt, now instant -- confirms the earlier failure really
+was edge/cache propagation lag, not a defect in the P0 fix. This is real evidence from GitHub's own
+network (not this sandbox) that the live homepage now serves all 20 real races.
+
+**Still not verified**: the fuller checklist from the original report (featured race, populated
+season/category/driver filters, at least three working race reports, archive populated, an OG
+image returning 200, sitemap listing every race URL) -- the automated deploy check only confirms
+homepage card count, not the full list. This sandbox's egress policy blocks `*.workers.dev`
+directly (confirmed again this session: `connect_rejected`, HTTP 403 via
+`$HTTPS_PROXY/__agentproxy/status`), the same restriction already documented here for FastF1's
+hosts, so this session cannot complete the fuller checklist itself. Per explicit instruction, this
+fix is not considered complete and Bryan OS is not updated until a human (or a network-unrestricted
+session) directly checks the live URL against that full list -- see "Exact next action" below.
 
 ### Phase 2: RaceIQ Showcase Rebuild
 
