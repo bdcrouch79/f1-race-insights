@@ -1,53 +1,33 @@
 import type { Metadata } from "next";
 
-import { ArchiveGrid, type ArchiveEntry } from "@/components/ArchiveGrid";
-import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, loadDemoFixture } from "@/lib/raceData";
+import { RaceLibrary } from "@/components/RaceLibrary";
+import { buildLibraryEntries } from "@/lib/raceLibraryData";
 import { LAP_TIMING_MIN_SEASON } from "@/lib/availability";
-import { findManifestEntry } from "@/lib/raceManifest";
 
 export const metadata: Metadata = {
-  title: "Archive",
-  description: "Every RaceIQ analysis generated so far, filterable by season and Grand Prix.",
+  title: "Legendary Race Library",
+  description:
+    "Every RaceIQ race intelligence report generated so far, filterable by season, category, driver, and featured status.",
 };
 
 export default function ArchivePage() {
-  const generated = listGeneratedAnalyses();
-  const demo = loadDemoFixture();
-
-  const entries: ArchiveEntry[] = [
-    ...generated.map(({ year, eventSlug, analysis }) => {
-      const manifestEntry = findManifestEntry(year, analysis.event.name);
-      return {
-        year,
-        eventSlug,
-        analysis,
-        isSample: false,
-        category: manifestEntry?.category,
-        featured: manifestEntry?.featured ?? false,
-        description: manifestEntry?.description,
-      };
-    }),
-    ...(demo
-      ? [{ year: DEMO_FIXTURE_ROUTE.year, eventSlug: DEMO_FIXTURE_ROUTE.eventSlug, analysis: demo, isSample: true }]
-      : []),
-  ];
+  const entries = buildLibraryEntries();
 
   return (
     <div className="riq-container flex flex-col gap-6 py-12">
       <div>
-        <h1 className="font-display text-3xl tracking-wide text-riq-white">Archive</h1>
+        <h1 className="font-display text-3xl tracking-wide text-riq-white">Legendary Race Library</h1>
         <p className="mt-2 max-w-2xl text-riq-gray">
-          RaceIQ analyses are generated out-of-band from FastF1 and committed as versioned data
-          artifacts, not produced live on every visit. This page lists what has actually been
-          generated. RaceIQ&apos;s underlying data only reliably covers {LAP_TIMING_MIN_SEASON}
-          onward; see{" "}
+          Every race below has a real RaceIQ report, generated from FastF1 lap timing data and
+          committed as a versioned artifact, not produced live on every visit. RaceIQ&apos;s
+          underlying data only reliably covers {LAP_TIMING_MIN_SEASON} onward; see{" "}
           <a href="/methodology" className="underline underline-offset-2 hover:text-riq-white">
             methodology
           </a>{" "}
           for the full coverage matrix.
         </p>
       </div>
-      <ArchiveGrid entries={entries} />
+      <RaceLibrary entries={entries} />
     </div>
   );
 }

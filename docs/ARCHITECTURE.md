@@ -92,12 +92,12 @@ anywhere except `/api/subscribe`, which doesn't touch `fs` at all.
 
 - **Frontend**: Cloudflare Workers via the `@opennextjs/cloudflare` adapter (`wrangler.jsonc`,
   `open-next.config.ts`, `npm run cf:build` / `cf:deploy` in `apps/web`), Worker name `raceiq-web`,
-  target domain `raceiq.crouchdevelopment.com`. **Build verified working end to end** (`npm run
-  cf:build` succeeds; `npx wrangler deploy --dry-run` reads and validates the full asset bundle,
-  62 files, ~8.6 MB). **Not yet actually deployed** -- no Cloudflare API token exists in this
-  repository's secrets yet. See `docs/CURRENT_STATE.md` for the exact remaining steps. Attaching
-  the custom domain is a separate, deliberate step this repository's deploy workflow does not
-  perform automatically (it only reaches the Worker's `*.workers.dev` subdomain).
+  target domain `raceiq.crouchdevelopment.com`. **Live** at
+  `https://raceiq-web.bryan-7df.workers.dev`, deployed automatically by
+  `.github/workflows/deploy-cloudflare.yml` on every push to `main`. See `docs/CURRENT_STATE.md`
+  for the current verified deployment state. Attaching the custom domain remains a separate,
+  deliberate step this repository's deploy workflow does not perform automatically (it only
+  reaches the Worker's `*.workers.dev` subdomain).
   - Two real bugs were found and fixed getting the Cloudflare build to succeed, both from this
     being a monorepo (the Next.js app lives in `apps/web`, not the repo root): `output:
     "standalone"` was missing from `next.config.ts` (required by `@opennextjs/cloudflare`, or its
@@ -159,12 +159,52 @@ turned out wrong would either mask itself or need constant upkeep. If a generati
 success but the expected output file isn't where the script predicted, that specific race is
 reported as failed with an explicit message pointing at the mismatch -- not silently accepted.
 
-**Frontend join, same principle.** `apps/web/lib/raceManifest.ts` attaches a manifest entry's
-editorial metadata (category, featured flag, description) to a real generated race by matching
-`(year, the actual FastF1-resolved event.name)` -- never a predicted slug -- so a race whose
-official name turns out to differ from what was assumed when the manifest entry was written simply
-doesn't get a badge yet, instead of attaching the wrong one. This is additive: `ArchiveGrid` renders
-identically for any race with no manifest match.
+**Frontend join, same principle.** `apps/web/lib/raceManifest.ts::findManifestEntry` attaches a
+manifest entry's editorial metadata (category, featured flag, description) to a real generated
+race by matching `(year, the actual FastF1-resolved event.name)` -- never a predicted slug -- so a
+race whose official name turns out to differ from what was assumed when the manifest entry was
+written simply doesn't get a badge yet, instead of attaching the wrong one. This is additive:
+`RaceLibrary` renders identically for any race with no manifest match. One real gap this join had
+until Phase 2's verification pass: a plain substring check silently fails when the manifest query
+is a country name but FastF1's real EventName uses the demonym (`"Germany"` vs. `"German Grand
+Prix"`) -- fixed with a small `EVENT_NAME_ALIASES` table, verified against all 20 real committed
+races, not guessed. See `docs/DECISIONS.md`.
+
+## Frontend composition (Phase 2 showcase rebuild)
+
+The data flow above is unchanged by Phase 2 -- this section is about how `apps/web` presents that
+same data. Two pages consume the same building blocks:
+
+```text
+lib/raceLibraryData.ts (server-only: joins listGeneratedAnalyses() + raceManifest.ts)
+        |
+        +--> app/page.tsx        (Hero, FeaturedRaceSpotlight, RaceLibrary, business CTA)
+        |
+        +--> app/archive/page.tsx (RaceLibrary as its own full page, same component)
+
+app/race/[year]/[event]/page.tsx
+        +--> WhatDecidedTheRace (SummaryCards, restyled + lib/raceInsight.ts::getTakeaways)
+        +--> four ChartCard sections (unchanged chart components)
+        +--> CollapsibleSection (Evidence & Methodology, collapsed by default)
+```
+
+`lib/raceInsight.ts` holds the pure, testable editorial logic (`getPrimaryInsight`,
+`getTakeaways`, `pickFeaturedRace`, `findEvidence`) -- it imports nothing server-only (no
+`node:fs`), so it's safe to import from `RaceLibrary.tsx`, a client component, without pulling
+`fs` into the browser bundle. Server-only data assembly (`raceLibraryData.ts`, which does import
+`raceData.ts` and `raceManifest.ts`) is a separate file for exactly that reason -- the same
+`lib/slug.ts` pattern this repository already established for `raceData.ts` vs. client components.
+
+**RaceIQ Weekend Brief is hidden, not removed.** `components/WeekendBriefForm.tsx` and
+`app/api/subscribe/route.ts` are unchanged and still present; neither `app/page.tsx` nor
+`app/race/[year]/[event]/page.tsx` renders `WeekendBriefForm` anymore. Re-enabling it later is a
+matter of adding the component back to those two pages once Bryan explicitly decides to reconnect
+Brevo -- not a rebuild.
+
+**No new runtime dependencies.** The hero's entrance motion and the racing-line shimmer
+(`RacingLineBackdrop.tsx`) are CSS-only (`app/globals.css`, guarded by
+`prefers-reduced-motion`) -- no animation library was added. `CollapsibleSection` uses a native
+`<details>`/`<summary>` element, not a new disclosure component or dependency.
 
 ## Caching
 
@@ -182,9 +222,12 @@ identically for any race with no manifest match.
 - Python: `analysis/tests/` -- synthetic fixtures for metric math, availability rules, schema
   validation, and one full `engine.run_analysis()` integration test against a monkeypatched
   FastF1 session (no live network call in CI).
-- Frontend: `apps/web/tests/` -- component rendering (selector, forms, chart container, badges),
-  data resolution (`resolveAnalysis`), metadata generation, the subscribe route's validation and
-  fail-safe behavior, and a schema-contract integration test against a real engine-generated
-  fixture (`data/fixtures/demo-race.json`, produced by `scripts/generate_demo_fixture.py`).
+- Frontend: `apps/web/tests/` -- component rendering (selector, forms, chart container, badges,
+  `Hero`, `CollapsibleSection`, `WhatDecidedTheRace`), data resolution (`resolveAnalysis`),
+  editorial logic (`raceInsight.test.ts`), the `RaceLibrary` filter behavior (season, category,
+  driver, featured, search, and that no season without a real race is ever offered), the manifest
+  demonym-alias join (`raceManifest.test.ts`), metadata generation, the subscribe route's
+  validation and fail-safe behavior, and a schema-contract integration test against a real
+  engine-generated fixture (`data/fixtures/demo-race.json`).
 - Neither suite depends on a live external data request, per the requirement that a live request
   must never be the only automated test.

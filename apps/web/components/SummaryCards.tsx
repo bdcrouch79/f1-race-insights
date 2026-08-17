@@ -1,6 +1,7 @@
 import { TeamSwatch } from "@/components/TeamSwatch";
 import { driverLabel } from "@/lib/format";
 import type { DriverInfo } from "@/lib/driverInfo";
+import { findEvidence } from "@/lib/raceInsight";
 import type { EvidenceItem, RaceAnalysis } from "@/lib/schema";
 
 const CARD_DEFS: { key: keyof RaceAnalysis["summary"]; label: string; metric: string }[] = [
@@ -9,11 +10,6 @@ const CARD_DEFS: { key: keyof RaceAnalysis["summary"]; label: string; metric: st
   { key: "strongestLateRaceDriver", label: "Strongest closing pace", metric: "degradation" },
   { key: "largestPaceDeclineDriver", label: "Largest pace decline", metric: "degradation" },
 ];
-
-function findEvidence(evidence: EvidenceItem[], metric: string, driver: string | null): EvidenceItem | undefined {
-  if (!driver) return undefined;
-  return evidence.find((item) => item.metric === metric && item.driver === driver);
-}
 
 export function SummaryCards({
   summary,
@@ -44,19 +40,24 @@ export function SummaryCards({
       {cards.map((card) => {
         const driver = card.driverCode ? drivers[card.driverCode] : undefined;
         return (
-          <div key={card.key} className="riq-panel riq-hover-lift p-5">
-            <p className="text-xs uppercase tracking-wide text-riq-gray">{card.label}</p>
-            <p className="mt-2 flex items-center gap-2 font-display text-2xl tracking-wide text-riq-white">
+          <div key={card.key} className="riq-panel riq-hover-lift p-6">
+            <p className="text-xs uppercase tracking-wide text-riq-cyan">{card.label}</p>
+            <p className="mt-3 flex items-center gap-2 font-display text-2xl tracking-wide text-riq-white sm:text-3xl">
               <TeamSwatch driver={driver} />
               {driver ? driverLabel(driver) : card.driverCode}
             </p>
-            {driver?.team ? <p className="mt-0.5 text-xs text-riq-gray">{driver.team}</p> : null}
+            {driver?.team ? <p className="mt-1 text-xs text-riq-gray">{driver.team}</p> : null}
             {card.evidenceItem ? (
-              <p className="mt-3 tabular-nums text-sm text-riq-cyan">
+              <p className="mt-4 font-display text-xl tabular-nums text-riq-white sm:text-2xl">
                 {card.evidenceItem.value > 0 && card.metric === "degradation" ? "+" : ""}
-                {card.evidenceItem.value.toFixed(3)} {card.evidenceItem.unit}
-                <span className="ml-2 text-riq-gray">· {card.evidenceItem.sampleSize} laps</span>
+                {card.evidenceItem.value.toFixed(3)}
+                <span className="ml-1 text-sm font-sans text-riq-gray">
+                  {card.metric === "averagePace" ? "s/lap" : "s"}
+                </span>
               </p>
+            ) : null}
+            {card.evidenceItem ? (
+              <p className="mt-1 text-xs text-riq-gray">{card.evidenceItem.sampleSize} quick laps</p>
             ) : null}
           </div>
         );

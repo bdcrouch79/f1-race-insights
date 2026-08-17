@@ -9,8 +9,10 @@ traceable to a metric, a driver, a value, and a sample size.
 
 ## Core public promise
 
-> Select a race. RaceIQ reveals the pace, consistency, degradation, and performance patterns
-> hidden beneath the finishing order.
+> The finishing order tells you who won. RaceIQ shows you how the race was won.
+
+RaceIQ reveals the pace, consistency, degradation, and performance patterns hidden beneath the
+finishing order, evidence you can trace back to the lap.
 
 ## Who it's for
 
@@ -26,25 +28,34 @@ workbench, every possible chart or social format, and massive historical pre-gen
 explicitly out of scope. See `docs/ROADMAP.md` for what may come later and why each is excluded
 for now.
 
-## The one complete path (Phase 1 definition of done)
+## The one complete path (Phase 2)
 
-1. Visitor opens RaceIQ (`/`).
-2. Visitor selects an available season and Grand Prix.
-3. RaceIQ resolves a precomputed analysis (generated out-of-band; see `docs/ARCHITECTURE.md`) or
-   shows an honest "not yet generated" state.
-4. RaceIQ presents an interactive dashboard: average pace, lap evolution, consistency,
-   degradation.
-5. RaceIQ shows an evidence-based summary linking each headline to its metric.
-6. Visitor can generate/view one shareable RaceIQ social insight card (`opengraph-image`).
-7. Visitor can optionally subscribe to the RaceIQ Weekend Brief.
+1. Visitor opens RaceIQ (`/`) and sees the hero message, then one featured real race with its
+   actual generated metrics.
+2. Visitor explores the Legendary Race Library, filtering by season, category, driver, or featured
+   status -- every entry is a real, already-generated race; there is no arbitrary generation and no
+   empty season is ever shown.
+3. Visitor opens a race report. RaceIQ leads with "What Decided The Race": the four headline
+   stats (fastest pace, most consistent, strongest closing pace, largest pace decline when one
+   exists) and up to three evidence-backed takeaways, all traceable to `evidence`.
+4. RaceIQ presents the supporting charts: average pace, lap evolution, consistency, degradation.
+5. Evidence and methodology detail is available but collapsed by default -- present, not
+   competing with the headline story.
+6. Visitor can share one social insight card (`opengraph-image`) for the report.
+
+Phase 1's RaceIQ Weekend Brief signup (email capture, Brevo) is intentionally not part of this
+path for now -- see "Phase 2: RaceIQ Showcase Rebuild" in `docs/DECISIONS.md`. The code remains in
+the repository, unused, for a later phase.
 
 ## Information architecture
 
-- `/` -- homepage: hero, season/race selector, example summary, one chart, "how it works," real
-  analyses (if any), Weekend Brief signup, disclaimer, Crouch Development attribution.
-- `/race/[year]/[event]` -- permanent race report: header, summary, four charts, evidence and
-  methodology, Weekend Brief signup.
-- `/archive` -- filterable browser of every generated analysis.
+- `/` -- homepage: cinematic hero (exact tagline above), one featured real race shown with its
+  actual metrics, the Legendary Race Library (filterable), a short Crouch Development tie-in with
+  one CTA, disclaimer and attribution. No dropdown-first selector, no Weekend Brief signup.
+- `/race/[year]/[event]` -- permanent race report: header, "What Decided The Race" (headline stats
+  + takeaways), four supporting charts, collapsed evidence and methodology detail, disclaimer.
+- `/archive` -- the full Legendary Race Library as its own permanent, indexable page (same
+  component as the homepage section).
 - `/methodology` -- data source, calculations, degradation heuristic, historical limitations,
   independence disclaimer.
 - `/about` -- purpose, Bryan Crouch, Crouch Development, architecture at a public-safe level.

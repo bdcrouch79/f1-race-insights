@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const NAV_LINKS = [
-  { href: "/archive", label: "Archive" },
+  { href: "/archive", label: "Race Library" },
   { href: "/methodology", label: "Methodology" },
   { href: "/about", label: "About" },
 ];
@@ -25,7 +25,7 @@ export function SiteHeader() {
           href="/archive"
           className="rounded-md bg-riq-panel px-4 py-2 text-sm font-medium text-riq-white riq-hover-lift border riq-divider"
         >
-          Analyze a Race
+          Explore Race Intelligence
         </Link>
       </div>
     </header>

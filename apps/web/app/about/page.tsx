@@ -16,9 +16,9 @@ export default function AboutPage() {
       <div className="mt-6 space-y-4 text-riq-gray">
         <p>
           RaceIQ turns historical Formula 1 race sessions into evidence-based performance reports.
-          Select a race and RaceIQ shows the pace, consistency, and degradation patterns behind
-          the finishing order, with every claim traceable back to a metric, a driver, a value, and
-          a sample size.
+          Explore the Legendary Race Library and RaceIQ shows the pace, consistency, and
+          degradation patterns behind the finishing order, with every claim traceable back to a
+          metric, a driver, a value, and a sample size.
         </p>
         <p>
           RaceIQ is built by Bryan Crouch under{" "}

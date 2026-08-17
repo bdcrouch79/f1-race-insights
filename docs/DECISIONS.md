@@ -289,3 +289,84 @@ redesign -- no route, layout, or architecture changed; it decorates the existing
 the same panel/badge patterns already in the file (the existing "Sample" badge). Covered by
 `apps/web/tests/raceManifest.test.ts` and confirmed against the real committed Monaco 2024 entry
 with a local `next start` + curl check (see `docs/CURRENT_STATE.md`).
+
+## 2026-08-17 -- Phase 2: RaceIQ Showcase Rebuild
+
+**Constraint**: with all 20 curated races real and committed (Phase 1 complete, merged to `main`,
+deployed), Bryan asked for the frontend to become a visually powerful Crouch Development showcase
+and social-proof asset instead of a technical report viewer -- an exact required hero message, a
+featured race spotlight, a filterable "Legendary Race Library," a race-report "What decided the
+race" lead section, the Weekend Brief hidden for now, and language that never implies arbitrary
+on-demand race generation. Explicitly out of scope: rebuilding the Python engine, new
+infrastructure, authentication/payments/AI chat/simulations, reconnecting Brevo, and the
+social-content factory.
+
+**Homepage restructure**: replaced the dropdown-first selector (`SeasonRaceSelector`, still
+present in the tree but no longer rendered anywhere) with `Hero` (exact required copy),
+`FeaturedRaceSpotlight` (one real race with real metrics), and the Legendary Race Library
+(`RaceLibrary`, renamed from `ArchiveGrid` since it's now used on two pages, not one). The old "How
+it works" grid and the long "Why this exists" paragraph were removed rather than restyled -- the
+new hero, spotlight, and library already carry that "show, don't tell" job better, and keeping both
+would have doubled the same message. Replaced with the exact required two-sentence tie-in and CTA.
+
+**Race report restructure**: `WhatDecidedTheRace` leads every report with the four headline stats
+(the existing `SummaryCards`, restyled larger/bolder, not reimplemented) and up to three takeaways
+from a new `lib/raceInsight.ts::getTakeaways` -- always derived from `analysis.summary` and
+`analysis.evidence`, the same fields the charts already render, never a new computation.
+Prioritization: pace and consistency are populated for every one of the 20 real races, so they're
+always takeaways 1-2; a genuine pace decline exists for only 3 of 20 (2018 Germany, 2019 Germany,
+2022 Japan -- verified by reading every committed file, not assumed), so takeaway 3 falls back to
+the closing-pace headline (always populated) when no decline exists, rather than showing fewer than
+three takeaways on 17 of 20 reports. Evidence & Methodology moved into a collapsed `<details>`
+(`CollapsibleSection`) -- present, not competing with the lead story, per the brief's own
+"collapsed where appropriate" instruction.
+
+**Weekend Brief: hidden, not deleted**. `WeekendBriefForm` and `/api/subscribe` are unchanged and
+still in the repository; neither is rendered on the homepage or race report anymore. This is a
+two-line-per-page change (remove the `<WeekendBriefForm>` usage), deliberately reversible without
+a rebuild once Bryan decides to reconnect Brevo -- consistent with the instruction not to delete
+reusable code unless necessary, and it isn't necessary here.
+
+**Accurate language**: "Analyze a Race" (header CTA) implied a visitor could generate or analyze an
+arbitrary race, which was never true even in Phase 1 (the frontend only ever reads precomputed
+files) and is more obviously false now that the homepage leads with a curated library. Replaced
+with "Explore Race Intelligence" throughout (header CTA, hero primary CTA); "Archive" relabeled
+"Race Library" in navigation to match the new "Legendary Race Library" heading.
+
+**Two real bugs found during verification, not assumed fixed by code review**:
+
+1. `apps/web/lib/raceManifest.ts`'s join (`findManifestEntry`) used a plain substring check between
+   a manifest query and the real FastF1 EventName. This silently failed for 7 of 20 races because
+   FastF1's real event name often uses the demonym/adjective form of a manifest query that's a
+   country name (`"Germany"` -> `"German Grand Prix"`, `"Italy"` -> `"Italian"`, `"Turkey"` ->
+   `"Turkish"`, `"Netherlands"` -> `"Dutch"`, `"Britain"` -> `"British"`) -- the country name is
+   never actually a substring of the adjective. Found by comparing the Legendary Race Library's
+   "Featured only" filter (rendered 6 cards) against the manifest's real featured count (8),
+   during Playwright verification -- not caught by TypeScript, ESLint, or the existing test suite,
+   because the join degrades silently (a missing badge, not a crash). Fixed with a small,
+   verified `EVENT_NAME_ALIASES` table in `raceManifest.ts` (checked against all 20 real committed
+   event names, not guessed), with regression coverage added to `raceManifest.test.ts`.
+2. `FeaturedRaceSpotlight`'s mini pace-chart preview initially passed the raw, unfiltered
+   `paceRanking` (sliced to 8 rows) straight to `PaceChart`. For races where the raw-fastest driver
+   has an unrepresentative quick-lap sample, this reproduces exactly the risk
+   `apps/web/lib/headlineEligibility.ts` already exists to prevent for the OG image (see the
+   2026-08-16 entry above) -- an empty/invisible bar for the "fastest" row and a nonzero gap for
+   the real headline leader, in a homepage hero position with no tooltip visible until hovered.
+   Fixed by reusing `filterEligibleForHeadline` (no new logic) and recomputing
+   `gapToFastestSeconds` relative to the eligible leader, exactly mirroring
+   `opengraph-image.tsx`'s existing pattern.
+
+Both were caught by actually reading rendered Playwright screenshots and comparing filter counts
+against known-correct numbers, not by asserting the code "should" be correct -- consistent with
+this repository's established practice (see the three Monaco 2024 fixes above) of verifying
+generated/rendered output rather than trusting arithmetic in isolation.
+
+**No new runtime dependencies**: entrance motion and the racing-line backdrop are CSS-only
+(`app/globals.css`, `prefers-reduced-motion`-guarded); `CollapsibleSection` uses a native
+`<details>` element. No animation or disclosure library was added.
+
+**Deployment**: `raceiq-web` was already live on Cloudflare Workers before this change (Phase 1's
+merge to `main` triggered the first deploy). This change follows the same path -- merge to `main`,
+let `.github/workflows/deploy-cloudflare.yml` deploy automatically, then verify the live URL
+directly rather than assuming a green workflow run means the public site reflects the new
+experience. See `docs/CURRENT_STATE.md` for the verified result.
