@@ -46,9 +46,27 @@ forward.
 **Verified so far**: JSON validation (21/21), Python tests (29 passed), frontend typecheck/lint/
 `npm run test` (76 passed), `npm run build`, `npm run cf:build`, and `npm run verify:worker`
 against the real local Workers runtime -- all passing, including every race report and OG image
-route spot-checked. **Not yet verified**: the actual deployed `workers.dev` URL after this change
-merges and redeploys -- see "Exact next action" below. Per explicit instruction, this fix is not
-considered complete and Bryan OS is not updated until that direct check happens.
+route spot-checked. Merged to `main` (PR #3) on 2026-08-17; CI (`ci.yml`) passed independently on
+GitHub's own runner.
+
+**First deploy attempt (PR #3's merge, 2026-08-17) exposed a flaky post-deploy check, not a code
+regression**: `deploy-cloudflare.yml`'s `wrangler deploy` step succeeded (new Worker version
+`7e43f164-d333-4479-b58d-531060707066`), but the new "Verify the deployed Worker actually serves
+real races" step failed 8 seconds later: HTTP 200 with zero cards -- even though the exact same
+build's `npm run verify:worker` (real local Workers runtime, moments earlier in the same job)
+passed every check. That points at Cloudflare edge/cache propagation lagging the deploy API's
+success response, not a defect in the fix itself. Replaced the single fixed-`sleep 8` check with a
+90-second retry loop (see `docs/DECISIONS.md` addendum) and re-deployed via a follow-up PR.
+
+**Not yet verified**: the actual deployed `workers.dev` URL, directly, by a human or a
+network-unrestricted session. This sandbox's egress policy blocks `*.workers.dev` (confirmed again
+this session: `connect_rejected`, HTTP 403 via `$HTTPS_PROXY/__agentproxy/status`) -- the same
+restriction already documented here for FastF1's hosts -- so this session can only rely on
+`deploy-cloudflare.yml`'s own post-deploy check (which does run on GitHub's real network and does
+fetch the real live URL) as automated evidence, not on curling the site directly itself. Per
+explicit instruction, this fix is not considered complete and Bryan OS is not updated until a
+direct check of the live URL happens -- see "Exact next action" below for the exact outstanding
+step and who needs to do it.
 
 ### Phase 2: RaceIQ Showcase Rebuild
 

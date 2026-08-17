@@ -93,21 +93,40 @@ jobs:
       # Workers has no built-in automatic rollback wired up here -- but
       # it does fail the workflow loudly instead of reporting green
       # while production is broken. See docs/DECISIONS.md (2026-08-17).
+      #
+      # Retries for up to 90s instead of a single check after a fixed
+      # `sleep 8`: the first real run of this step (2026-08-17, deploying
+      # the runtime-fs/dynamicParams fix itself) failed with HTTP 200 and
+      # zero cards eight seconds after `wrangler deploy` reported success
+      # -- while the exact same build's `npm run verify:worker` (real
+      # local Workers runtime, moments earlier in the same job) passed
+      # every check. That gap points at Cloudflare's global edge/cache
+      # propagation lagging the deploy API response, not a code defect --
+      # a single fixed-delay check can't tell the two apart, so it can't
+      # be trusted to fail the workflow. See docs/DECISIONS.md (2026-08-17).
       - name: Verify the deployed Worker actually serves real races
         run: |
-          sleep 8
           URL="https://raceiq-web.bryan-7df.workers.dev/"
-          BODY=$(curl -s "$URL" || echo "")
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
-          CARD_COUNT=$(printf '%s' "$BODY" | grep -o "View Report" | wc -l | tr -d ' ')
-          echo "HTTP status: $STATUS"
-          echo "Race cards found on homepage: $CARD_COUNT"
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Deployed Worker returned HTTP $STATUS instead of 200."
-            exit 1
-          fi
-          if [ "$CARD_COUNT" -eq 0 ]; then
-            echo "::error::Deployed homepage returned HTTP 200 but rendered zero race cards. This is the exact 2026-08-17 incident signature -- see docs/DECISIONS.md."
-            exit 1
-          fi
-          echo "Deployed Worker responded 200 OK with $CARD_COUNT real race card(s) on the homepage."
+          DEADLINE=$((SECONDS + 90))
+          ATTEMPT=0
+          while true; do
+            ATTEMPT=$((ATTEMPT + 1))
+            BODY=$(curl -s "$URL" || echo "")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+            CACHE_STATUS=$(curl -s -o /dev/null -D - "$URL" | grep -i "^cf-cache-status:" | tr -d '\r' || true)
+            CARD_COUNT=$(printf '%s' "$BODY" | grep -o "View Report" | wc -l | tr -d ' ')
+            echo "Attempt $ATTEMPT: HTTP status $STATUS, $CARD_COUNT race card(s), ${CACHE_STATUS:-no cf-cache-status header}"
+            if [ "$STATUS" = "200" ] && [ "$CARD_COUNT" -gt 0 ]; then
+              echo "Deployed Worker responded 200 OK with $CARD_COUNT real race card(s) on the homepage after $ATTEMPT attempt(s)."
+              exit 0
+            fi
+            if [ "$SECONDS" -ge "$DEADLINE" ]; then
+              if [ "$STATUS" != "200" ]; then
+                echo "::error::Deployed Worker still returning HTTP $STATUS instead of 200 after 90s."
+              else
+                echo "::error::Deployed homepage still returning HTTP 200 with zero race cards after 90s. This is the exact 2026-08-17 incident signature -- see docs/DECISIONS.md."
+              fi
+              exit 1
+            fi
+            sleep 10
+          done
