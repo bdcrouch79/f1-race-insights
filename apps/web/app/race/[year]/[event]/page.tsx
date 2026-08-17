@@ -17,12 +17,27 @@ import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/li
 
 const SITE_URL = "https://raceiq.crouchdevelopment.com";
 
-// Cloudflare Workers have no filesystem at request time (see raceData.ts),
-// so any params not returned by generateStaticParams below must 404 at
-// the routing layer rather than fall through to a dynamic render that
-// would crash trying to read data/** -- see not-found.tsx for the page
-// users actually see when that happens.
-export const dynamicParams = false;
+// `dynamicParams = false` used to be required because a request for a
+// path outside generateStaticParams would fall through to a dynamic
+// render that read data/** off the filesystem, which crashes at request
+// time in a real Node.js process (see the old raceData.ts). That's no
+// longer true: raceData.ts now resolves every race from a statically
+// imported JSON module, so rendering an unlisted path live is just an
+// array lookup, not a filesystem read, and is completely safe.
+//
+// Leaving `dynamicParams = false` in place actively breaks production:
+// this Worker has no R2/KV incremental-cache binding configured (see
+// wrangler.jsonc), so every request is a cache miss. For an
+// SSG-with-`dynamicParams: false` route, OpenNext's Cloudflare adapter
+// routes a cache miss through Next's ISR "revalidate" path, which throws
+// `NoFallbackError` and returns a 404 for a page that was in fact
+// prerendered at build time -- discovered by running the actual
+// `wrangler dev` runtime and inspecting its own captured console output
+// (`NoFallbackError` at `handleRevalidate`), not by guessing. The sibling
+// opengraph-image.tsx never hit this because Next compiles a metadata
+// image route through a different code path that doesn't depend on the
+// page-revalidate cache lookup. See docs/DECISIONS.md (2026-08-17).
+export const dynamicParams = true;
 
 interface PageProps {
   params: Promise<{ year: string; event: string }>;

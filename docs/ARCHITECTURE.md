@@ -54,39 +54,100 @@ validates a real engine-generated fixture against the TypeScript schema as an in
 
 ## Frontend data access
 
-`apps/web/lib/raceData.ts` reads `data/generated/` and `data/fixtures/` from the filesystem via
-`node:fs`, resolved relative to the monorepo root (`path.resolve(process.cwd(), "..", "..")`).
-This only works when the full repository checkout is present at build/request time. Two
-consequences are handled explicitly:
+**Build-time static import, not runtime filesystem access.** `apps/web/scripts/build-data.mjs` is
+a standalone Node.js script (never bundled into the app) that reads the committed
+`data/generated/`, `data/race-manifest.json`, `data/fixtures/demo-race.json`, and `assets/cd-mark.png`
+and writes them into app-owned JSON artifacts under `apps/web/data/*.json` (gitignored, regenerated
+every build). `lib/raceData.ts` and `lib/raceManifest.ts` `import` those files directly
+(`import generatedRacesData from "../data/generated-races.json"`) instead of reading anything with
+`node:fs` at request time. Webpack/Next inlines a static `import` of a JSON module into the built
+JS bundle, so the data ships as part of the code -- there is no path to resolve, no directory to
+find, and no distinction between "works under `next start`" and "works inside a Workers isolate,"
+because nothing is read from disk after the build step runs. `npm run generate:data` runs the
+script; every other script that needs the data (`dev`, `build`, `lint`, `typecheck`, `test`,
+`cf:build`, `cf:preview`, `cf:deploy`) has a matching `pre<script>` hook so it always runs first --
+except CI's direct `npx eslint .` call, which bypasses `prelint`, so CI runs `generate:data`
+explicitly as its own step (see `.github/workflows/ci.yml`, `deploy-cloudflare.yml`).
 
-- **Client bundling**: server-only modules (`fs`, `path`) must never be imported into a `"use
-  client"` component's dependency graph. `lib/slug.ts` exists specifically to give client
-  components (`SeasonRaceSelector`) a filesystem-free `slugify()` they can import instead of
-  pulling in `lib/raceData.ts`.
-- **Serverless/edge bundling**: `next.config.ts` sets `outputFileTracingIncludes` so `/`,
-  `/archive`, and `/race/[year]/[event]` trace `data/**` into their deployed function/worker
-  output. Without this, a dynamically-rendered (non-statically generated) request for those routes
-  would not find the data directory on a serverless/edge platform even though it works in local
-  `next dev`. Deliberately does **not** also set `outputFileTracingRoot` to the monorepo root:
-  `apps/web` has its own `package-lock.json`, so both Next and `@opennextjs/cloudflare` already
-  treat it as its own tracing root; overriding it broke the Cloudflare build outright (see below).
-  Verified: `.open-next/data/generated/raceiq/...` actually contains the real Monaco JSON after a
-  `cf:build`.
+This replaced an earlier design (through 2026-08-17) where `raceData.ts`/`raceManifest.ts` read
+`data/**` via `node:fs`, resolved relative to the monorepo root
+(`path.resolve(process.cwd(), "..", "..")`), and `next.config.ts` set `outputFileTracingIncludes`
+to copy `data/**` into the deployed function/Worker output. That worked under `next start`/`next
+build` (a real Node.js process, where `process.cwd()` and the traced files are both real) but
+silently produced zero data in the actual deployed Cloudflare Worker: Workers have no persistent
+filesystem at request time, so `fs.readFileSync`/`fs.existsSync` against that path returned
+nothing -- no thrown error, just empty arrays -- and the homepage, archive, and filters all
+rendered empty. `outputFileTracingIncludes` copying the files into `.open-next/` never guaranteed
+the *runtime* path inside the Worker resolved to them; it was necessary but not sufficient, and
+nothing in this build environment's own toolchain caught that, because `next build`, browser
+checks against `next start`, and even an HTTP-200-only post-deploy check all exercise a real
+Node.js process or a status code, never the actual `workerd` runtime with a request-time
+filesystem lookup. See `docs/DECISIONS.md` (2026-08-17) for the full incident writeup and
+`scripts/verify-worker-runtime.mjs` (below) for the check that now exists specifically to catch
+this failure class before it ships again.
+
+- **Client bundling**: server-only modules must never be imported into a `"use client"`
+  component's dependency graph. `lib/slug.ts` still exists to give client components
+  (`SeasonRaceSelector`) a `slugify()` they can import instead of pulling in `lib/raceData.ts`.
 - **Static generation**: `generateStaticParams` in `/race/[year]/[event]/page.tsx` enumerates every
   currently generated (real) analysis plus the one demo route, so the common case is served as a
-  prebuilt static page regardless of the runtime's filesystem access.
+  prebuilt static page. Unlike the old design, an unlisted path is no longer a special, riskier
+  case: `dynamicParams = true` (the default) lets Next render it live from the same statically
+  imported data with no filesystem access involved either way -- see "Static routing and the
+  Cloudflare incremental cache" below for why the earlier `dynamicParams = false` guard actively
+  broke production once the underlying filesystem risk it was written to prevent no longer existed.
 
 ## Social card (`opengraph-image`)
 
 `apps/web/app/race/[year]/[event]/opengraph-image.tsx` uses `next/og`'s `ImageResponse` with
-`export const runtime = "nodejs"`. It also defines its own `generateStaticParams` (mirroring the
-page's), which is the fix for the risk this section used to flag: without it, the image is
-generated on demand at request time, needing the same `data/**` filesystem access as the page --
-fine on Node.js runtimes, but Cloudflare Workers have no real filesystem at request time. With
-`generateStaticParams`, Next bakes the PNG as a static file at build time instead, for every route
-this app actually ships (verified: `next build` shows `● (SSG)` for
-`/race/[year]/[event]/opengraph-image`, not `ƒ (Dynamic)`). No remaining runtime `fs` dependency
-anywhere except `/api/subscribe`, which doesn't touch `fs` at all.
+`export const runtime = "nodejs"`. It defines its own `generateStaticParams` (mirroring the
+page's) and reads the Crouch Development mark from the same build-time static-import artifact
+(`data/cd-mark.json`, a base64 data URI written by `scripts/build-data.mjs`) rather than
+`node:fs`. No remaining runtime `fs` dependency anywhere in `apps/web` except `/api/subscribe`,
+which doesn't touch `fs` at all.
+
+## Static routing and the Cloudflare incremental cache
+
+A second, independent production bug was found while fixing the one above, and is recorded here
+because it's a different failure mode with the same root lesson: **don't depend on
+runtime infrastructure this Worker doesn't have configured.**
+
+`/race/[year]/[event]/page.tsx` had `export const dynamicParams = false` -- originally written to
+force an upfront 404 for any path outside `generateStaticParams`, rather than let it fall through
+to a dynamic render that (under the old `fs`-based `raceData.ts`) would have crashed trying to
+read `data/**`. That reasoning no longer applies now that `resolveAnalysis()` is a static-imported
+array lookup, safe for any input. But `dynamicParams = false` didn't just become unnecessary --
+verifying the fix above against the real Workers runtime (`wrangler dev --local`, not `next
+start`) found it was actively breaking every race report: all twenty routes, including ones
+present in `generateStaticParams` and correctly prerendered at build time, returned **HTTP 404**.
+
+**Root cause**, found by querying `wrangler dev`'s own local observability log
+(`/cdn-cgi/local/explorer/api/local/observability/query`) for the actual server-side error rather
+than guessing: `Error: Internal: NoFallbackError`, thrown from OpenNext's `handleRevalidate`. This
+Worker has no R2/KV binding configured for OpenNext's incremental cache (see `wrangler.jsonc`), so
+`@opennextjs/cloudflare` falls back to its default `"dummy"` incremental cache, whose `get()`
+always reports a miss -- for *every* route, on *every* request, prerendered or not. For a plain
+static page (`/`, `/archive`) a cache miss just means "render fresh," which works fine since
+rendering is now filesystem-free. But for an SSG route declared `dynamicParams: false`, Next's own
+server treats a cache miss as "this path was never actually generated," and refuses to fall back
+to a live render -- by design, since `dynamicParams: false` is supposed to mean exactly that. The
+sibling `opengraph-image.tsx` route also declares `dynamicParams: false` and was never affected,
+because Next compiles a metadata image route through a different code path that isn't gated by the
+page-revalidate cache lookup.
+
+**Fix**: `/race/[year]/[event]/page.tsx` now declares `dynamicParams = true` (Next's own default;
+the file makes it explicit and documents why). A request for any path -- listed in
+`generateStaticParams` or not -- now always renders live from the same static-imported data if the
+cache lookup misses, which it always will without a configured cache binding. The existing
+"Analysis not yet generated" panel already renders correctly (HTTP 200) for a year/event
+combination with no matching analysis, so behavior for genuinely unknown routes is unchanged; only
+the *known, real* routes that were incorrectly 404ing are fixed. `app/race/[year]/[event]/not-found.tsx`
+is now unreachable dead code (nothing calls `notFound()` in this route and `dynamicParams: true`
+means Next never renders a segment's `not-found.tsx` automatically) -- left in place rather than
+deleted, since it's a standard Next.js special file and removing it is not required by this fix.
+See `docs/DECISIONS.md` (2026-08-17) for the incident writeup and
+`scripts/verify-worker-runtime.mjs`, which now asserts every spot-checked race route returns 200
+with real content against the actual Workers runtime, not just a status code against `next start`.
 
 ## Deployment architecture
 
@@ -214,8 +275,10 @@ Brevo -- not a rebuild.
   `raceiq/v{analysisVersion}/{year}/{event-slug}/{session}`. Regeneration is deliberate (rerun the
   script), not automatic. A change to `ANALYSIS_VERSION` is what should trigger regeneration of
   existing files -- old versioned files remain valid and are not silently reinterpreted.
-- **Frontend rendering**: static generation for known routes; dynamic fallback (still reading the
-  same committed JSON) for anything not yet in `generateStaticParams`.
+- **Frontend rendering**: static generation for known routes at build time; a live render from the
+  same build-time static-imported data on any cache miss (which is every request, since this
+  Worker has no incremental-cache binding configured -- see "Static routing and the Cloudflare
+  incremental cache" above), including for routes not in `generateStaticParams`.
 
 ## Testing strategy
 

@@ -17,9 +17,10 @@ next-env.d.ts
 .wrangler/
 cloudflare-env.d.ts
 
-# Build-time copy of the real /data (created by Next's file tracing
-# when bundling for Cloudflare/serverless output) -- not source, never
-# committed. The real data lives at the repo root under /data.
+# Build-time copy of the real /data (written by apps/web/scripts/build-data.mjs,
+# imported statically by lib/raceData.ts/raceManifest.ts) -- not source, never
+# committed. The real data lives at the repo root under /data. See
+# docs/DECISIONS.md (2026-08-17).
 /apps/web/data/
 
 # Python
