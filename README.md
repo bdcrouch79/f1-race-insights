@@ -17,13 +17,15 @@ RaceIQ is independent and not affiliated with Formula 1, the FIA, any team, or a
 
 ## What RaceIQ does
 
-1. A visitor selects a historical season and Grand Prix.
-2. RaceIQ's Python engine loads the FastF1 race session and computes four verified metrics:
-   average race pace, lap-time trends, driver consistency, and an opening-versus-closing pace
-   degradation heuristic.
+1. A visitor explores the Legendary Race Library, a curated set of real, already-generated races,
+   filterable by season, category, driver, and featured status.
+2. RaceIQ's Python engine loaded the FastF1 race session ahead of time and computed four verified
+   metrics: average race pace, lap-time trends, driver consistency, and an opening-versus-closing
+   pace degradation heuristic.
 3. The engine returns a versioned, structured JSON contract.
-4. The Next.js frontend renders that contract as an interactive dashboard with an evidence-based
-   summary, and offers one shareable social insight card per analysis.
+4. The Next.js frontend renders that contract as a report led by "What Decided The Race" --
+   headline stats and evidence-backed takeaways -- followed by the interactive charts, and offers
+   one shareable social insight card per analysis.
 
 RaceIQ is a **historical race analysis engine**, not a simulator: it does not predict or model
 alternative race outcomes.

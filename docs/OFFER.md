@@ -19,22 +19,23 @@ signup required to see it.
   peers) -- RaceIQ is a public demonstration of product and software quality, not just a data
   toy.
 
-## The only "offer" in Phase 1: RaceIQ Weekend Brief
+## RaceIQ Weekend Brief -- built, currently hidden
 
-- **What it is**: a free email brief sent after each race, described on-site as "the data story
-  the finishing order missed."
+- **What it is**: a free email brief planned to send after each race, described in its own UI copy
+  as "the data story the finishing order missed."
 - **Price**: free.
-- **Delivery**: email via Brevo, dashboard is fully ungated (no email required to use RaceIQ
-  itself).
-- **Status**: signup form and API route are built; the Brevo list, sender, and secret are not yet
-  created, so the endpoint currently fails safely rather than accepting live signups. See
-  `docs/CURRENT_STATE.md`.
+- **Status**: the signup form (`WeekendBriefForm`) and API route (`/api/subscribe`) are
+  code-complete but not rendered anywhere in the public experience as of the Phase 2 showcase
+  rebuild (2026-08-17) -- see `docs/DECISIONS.md`. The Brevo list, sender, and secret are also
+  still not created, so the route would fail safely even if it were shown. Re-enabling it is an
+  explicit future decision, not automatic once Brevo is connected. See `docs/CURRENT_STATE.md`.
 
-## Conversion objective (Phase 1)
+## Conversion objective (current)
 
-Not revenue. The objective is **qualified traffic and Weekend Brief signups** as a measurable
-proxy for "does this analysis feel valuable enough that a stranger wants more of it." See
-`docs/GROWTH.md` for how this is measured.
+Not revenue. With the Weekend Brief hidden, the objective is a visitor reaching Crouch
+Development's commercial surface (the homepage's "Turn Your Business Data Into Answers" CTA) as a
+measurable proxy for "does this showcase feel credible enough to explore Crouch Development's
+actual work." See `docs/GROWTH.md` for how this is measured.
 
 ## No current paid product
 

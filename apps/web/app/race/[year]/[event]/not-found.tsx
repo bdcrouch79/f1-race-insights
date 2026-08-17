@@ -14,7 +14,7 @@ export default function RaceNotFound() {
           href="/archive"
           className="mt-6 inline-block rounded-md bg-riq-red px-5 py-2.5 text-sm font-medium text-riq-white"
         >
-          See what&apos;s available
+          See the Race Library
         </Link>
       </div>
     </div>

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
 import { AvailabilityBadges } from "@/components/AvailabilityBadges";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { SampleDataBanner } from "@/components/SampleDataBanner";
 import { ShareButton } from "@/components/ShareButton";
-import { SummaryCards } from "@/components/SummaryCards";
 import { TeamSwatch } from "@/components/TeamSwatch";
-import { WeekendBriefForm } from "@/components/WeekendBriefForm";
+import { WhatDecidedTheRace } from "@/components/WhatDecidedTheRace";
 import { ChartCard } from "@/components/ChartCard";
 import { ConsistencyChart } from "@/components/charts/ConsistencyChart";
 import { DegradationChart } from "@/components/charts/DegradationChart";
@@ -76,7 +76,7 @@ export default async function RaceReportPage({ params }: PageProps) {
             one hasn&apos;t been generated in this environment yet.
           </p>
           <a href="/archive" className="mt-6 inline-block rounded-md bg-riq-red px-5 py-2.5 text-sm font-medium text-riq-white">
-            See what&apos;s available
+            See the Race Library
           </a>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default async function RaceReportPage({ params }: PageProps) {
   const canonicalUrl = `${SITE_URL}/race/${year}/${event}`;
 
   return (
-    <div className="riq-container flex flex-col gap-10 py-12">
+    <div className="riq-container flex flex-col gap-12 py-12">
       <header className="flex flex-col gap-4 border-b riq-divider pb-8">
         {isSample ? <SampleDataBanner /> : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -113,7 +113,8 @@ export default async function RaceReportPage({ params }: PageProps) {
             <h1 className="mt-2 font-display text-3xl tracking-wide text-riq-white sm:text-5xl">
               {analysis.event.name}
             </h1>
-            <p className="mt-2 text-riq-gray">
+            <p className="mt-2 flex items-center gap-1.5 text-riq-gray">
+              <TeamSwatch driver={driverInfo[analysis.summary.fastestAveragePaceDriver ?? ""]} />
               {analysis.event.circuit ?? "Circuit unverified"}
               {analysis.event.date ? ` · ${analysis.event.date}` : ""}
             </p>
@@ -128,17 +129,13 @@ export default async function RaceReportPage({ params }: PageProps) {
         </div>
       </header>
 
-      <section aria-labelledby="riq-summary">
-        <h2 id="riq-summary" className="mb-4 font-display text-2xl tracking-wide text-riq-white">
-          RaceIQ Summary
-        </h2>
-        <SummaryCards summary={analysis.summary} evidence={analysis.evidence} drivers={driverInfo} />
-      </section>
+      <WhatDecidedTheRace analysis={analysis} drivers={driverInfo} />
 
-      <section aria-labelledby="riq-pace">
-        <h2 id="riq-pace" className="sr-only">
-          Average Race Pace
+      <section aria-labelledby="riq-evidence-charts" className="flex flex-col gap-8">
+        <h2 id="riq-evidence-charts" className="font-display text-2xl tracking-wide text-riq-white">
+          The Evidence
         </h2>
+
         <ChartCard
           title="Average Race Pace"
           description="Mean lap time across quick laps, fastest to slowest."
@@ -146,12 +143,7 @@ export default async function RaceReportPage({ params }: PageProps) {
         >
           <PaceChart pace={analysis.paceRanking} drivers={driverInfo} />
         </ChartCard>
-      </section>
 
-      <section aria-labelledby="riq-trends">
-        <h2 id="riq-trends" className="sr-only">
-          Lap Evolution
-        </h2>
         <ChartCard
           title="Lap Evolution"
           description="Lap-by-lap quick-lap pace for the top drivers by average pace. Toggle drivers in the legend; drag the bottom slider to zoom."
@@ -159,12 +151,7 @@ export default async function RaceReportPage({ params }: PageProps) {
         >
           <LapEvolutionChart lapTrends={analysis.lapTrends} drivers={driverInfo} />
         </ChartCard>
-      </section>
 
-      <section aria-labelledby="riq-consistency">
-        <h2 id="riq-consistency" className="sr-only">
-          Consistency
-        </h2>
         <ChartCard
           title="Consistency"
           description="Lap-time standard deviation across quick laps. Lower means a steadier, more repeatable pace."
@@ -172,12 +159,7 @@ export default async function RaceReportPage({ params }: PageProps) {
         >
           <ConsistencyChart consistency={analysis.consistency} drivers={driverInfo} />
         </ChartCard>
-      </section>
 
-      <section aria-labelledby="riq-degradation">
-        <h2 id="riq-degradation" className="sr-only">
-          Degradation
-        </h2>
         <ChartCard
           title="Degradation"
           description="Opening-versus-closing quick-lap pace for the top drivers by average pace."
@@ -187,10 +169,7 @@ export default async function RaceReportPage({ params }: PageProps) {
         </ChartCard>
       </section>
 
-      <section aria-labelledby="riq-evidence" className="riq-panel p-6">
-        <h2 id="riq-evidence" className="mb-4 font-display text-2xl tracking-wide text-riq-white">
-          Evidence and Methodology
-        </h2>
+      <CollapsibleSection title="Evidence & Methodology">
         <p className="mb-4 text-sm text-riq-gray">{analysis.methodology.quickLapDefinition}</p>
         <ul className="grid gap-3 sm:grid-cols-2">
           {analysis.evidence.map((item, index) => (
@@ -216,14 +195,7 @@ export default async function RaceReportPage({ params }: PageProps) {
             </ul>
           </div>
         ) : null}
-      </section>
-
-      <section aria-labelledby="riq-brief">
-        <h2 id="riq-brief" className="sr-only">
-          RaceIQ Weekend Brief
-        </h2>
-        <WeekendBriefForm source="race-report" />
-      </section>
+      </CollapsibleSection>
 
       <DisclaimerBanner compact />
     </div>

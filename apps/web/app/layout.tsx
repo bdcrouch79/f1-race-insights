@@ -11,27 +11,28 @@ const display = Oswald({ subsets: ["latin"], weight: ["500", "600", "700"], vari
 
 const SITE_URL = "https://raceiq.crouchdevelopment.com";
 
+const TAGLINE = "The finishing order tells you who won. RaceIQ shows you how the race was won.";
+const META_DESCRIPTION =
+  "RaceIQ reveals the pace, consistency, and degradation evidence behind how a Formula 1 race was actually won, not just who won it.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RaceIQ — Race Intelligence Beneath the Finishing Order",
+    default: "RaceIQ — How The Race Was Won",
     template: "%s — RaceIQ",
   },
-  description:
-    "RaceIQ reveals the pace, consistency, degradation, and performance patterns that shaped a Formula 1 race, beyond the finishing order.",
+  description: META_DESCRIPTION,
   openGraph: {
     type: "website",
     siteName: "RaceIQ",
-    title: "RaceIQ — Race Intelligence Beneath the Finishing Order",
-    description:
-      "Select a race. RaceIQ reveals the pace, consistency, degradation, and performance patterns hidden beneath the finishing order.",
+    title: TAGLINE,
+    description: META_DESCRIPTION,
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "RaceIQ — Race Intelligence Beneath the Finishing Order",
-    description:
-      "Select a race. RaceIQ reveals the pace, consistency, degradation, and performance patterns hidden beneath the finishing order.",
+    title: TAGLINE,
+    description: META_DESCRIPTION,
   },
   robots: {
     index: true,

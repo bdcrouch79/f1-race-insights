@@ -25,7 +25,7 @@ export function SiteFooter() {
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/archive" className="hover:text-riq-white">
-            Archive
+            Race Library
           </Link>
           <Link href="/methodology" className="hover:text-riq-white">
             Methodology
