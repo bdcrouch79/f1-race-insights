@@ -1,0 +1,170 @@
+{
+  "manifestVersion": 1,
+  "notes": [
+    "Curated Phase 1 race library for RaceIQ. Each entry drives one real FastF1 generation via scripts/generate_batch.py (which calls the existing scripts/generate_analysis.py -> analysis/raceiq/ engine for every entry).",
+    "\"event\" is the lookup string passed to FastF1 (fastf1.get_event(year, event)), not a guaranteed-exact FastF1 EventName -- FastF1 resolves it with its own fuzzy match against that season's schedule. scripts/generate_batch.py resolves and prints the official name/round for every entry before generating, and skips (does not crash) an entry that fails to resolve.",
+    "\"description\" must stay a neutral, publicly documented historical fact about the event itself (date, location, championship/season context, a widely reported on-track result), never a RaceIQ-derived analytical claim (pace, consistency, degradation) -- those only belong here once this repository has actually generated and reviewed that race's real data. See docs/DECISIONS.md."
+  ],
+  "races": [
+    {
+      "year": 2018,
+      "event": "Germany",
+      "displayName": "2018 German Grand Prix",
+      "category": "wet-weather",
+      "featured": false,
+      "description": "Held at Hockenheimring in wet conditions; Sebastian Vettel crashed out of the lead in the closing laps and Lewis Hamilton won after starting 14th on the grid."
+    },
+    {
+      "year": 2018,
+      "event": "Singapore",
+      "displayName": "2018 Singapore Grand Prix",
+      "category": "street-circuit",
+      "featured": false,
+      "description": "A night race on the Marina Bay Street Circuit."
+    },
+    {
+      "year": 2018,
+      "event": "Brazil",
+      "displayName": "2018 Brazilian Grand Prix",
+      "category": "classic-circuit",
+      "featured": false,
+      "description": "Held at Interlagos in Sao Paulo, Brazil."
+    },
+    {
+      "year": 2018,
+      "event": "Abu Dhabi",
+      "displayName": "2018 Abu Dhabi Grand Prix",
+      "category": "season-finale",
+      "featured": false,
+      "description": "The final round of the 2018 season, held at Yas Marina Circuit."
+    },
+    {
+      "year": 2019,
+      "event": "Germany",
+      "displayName": "2019 German Grand Prix",
+      "category": "wet-weather",
+      "featured": false,
+      "description": "Held at Hockenheimring in wet and changeable conditions."
+    },
+    {
+      "year": 2019,
+      "event": "Brazil",
+      "displayName": "2019 Brazilian Grand Prix",
+      "category": "notable-incident",
+      "featured": true,
+      "description": "Held at Interlagos; a penultimate-lap collision between Lewis Hamilton and Alexander Albon while fighting for position drew a post-race penalty for Hamilton. Max Verstappen won the race."
+    },
+    {
+      "year": 2019,
+      "event": "Italy",
+      "displayName": "2019 Italian Grand Prix",
+      "category": "high-speed-circuit",
+      "featured": false,
+      "description": "Held at Monza, one of the highest average-speed circuits on the Formula 1 calendar."
+    },
+    {
+      "year": 2019,
+      "event": "Azerbaijan",
+      "displayName": "2019 Azerbaijan Grand Prix",
+      "category": "street-circuit",
+      "featured": false,
+      "description": "Held on the Baku City Circuit street track."
+    },
+    {
+      "year": 2020,
+      "event": "Sakhir",
+      "displayName": "2020 Sakhir Grand Prix",
+      "category": "notable-result",
+      "featured": true,
+      "description": "A one-off 2020 event on the Bahrain International Circuit's outer layout. Sergio Perez fell to the back of the field after a first-lap incident and recovered to win, his first Formula 1 victory."
+    },
+    {
+      "year": 2020,
+      "event": "Turkey",
+      "displayName": "2020 Turkish Grand Prix",
+      "category": "title-decider",
+      "featured": true,
+      "description": "Held at Istanbul Park in wet, low-grip conditions. Lewis Hamilton won from sixth on the grid to secure his seventh World Drivers' Championship, equaling Michael Schumacher's record at the time."
+    },
+    {
+      "year": 2020,
+      "event": "Italy",
+      "displayName": "2020 Italian Grand Prix",
+      "category": "notable-result",
+      "featured": true,
+      "description": "Held at Monza. Pierre Gasly won his first Grand Prix for AlphaTauri (formerly Toro Rosso), the team's first win since 2008."
+    },
+    {
+      "year": 2021,
+      "event": "Abu Dhabi",
+      "displayName": "2021 Abu Dhabi Grand Prix",
+      "category": "title-decider",
+      "featured": true,
+      "description": "The 2021 season finale at Yas Marina Circuit, where the Drivers' Championship was decided between Max Verstappen and Lewis Hamilton on the final lap."
+    },
+    {
+      "year": 2021,
+      "event": "Britain",
+      "displayName": "2021 British Grand Prix",
+      "category": "notable-incident",
+      "featured": false,
+      "description": "Held at Silverstone; a first-lap collision between Max Verstappen and Lewis Hamilton at Copse corner ended Verstappen's race. Hamilton received a time penalty and went on to win."
+    },
+    {
+      "year": 2021,
+      "event": "Saudi Arabia",
+      "displayName": "2021 Saudi Arabian Grand Prix",
+      "category": "new-circuit",
+      "featured": false,
+      "description": "The inaugural Formula 1 race on the Jeddah Corniche Circuit, held at night."
+    },
+    {
+      "year": 2022,
+      "event": "Japan",
+      "displayName": "2022 Japanese Grand Prix",
+      "category": "title-decider",
+      "featured": true,
+      "description": "Held at Suzuka and shortened by a red flag in wet conditions. Max Verstappen's win secured his second World Drivers' Championship."
+    },
+    {
+      "year": 2022,
+      "event": "Saudi Arabia",
+      "displayName": "2022 Saudi Arabian Grand Prix",
+      "category": "close-battle",
+      "featured": false,
+      "description": "Held on the Jeddah Corniche Circuit. Max Verstappen and Charles Leclerc traded the lead in the closing laps before Verstappen won by roughly half a second."
+    },
+    {
+      "year": 2023,
+      "event": "Las Vegas",
+      "displayName": "2023 Las Vegas Grand Prix",
+      "category": "new-circuit",
+      "featured": true,
+      "description": "The inaugural Formula 1 Las Vegas Grand Prix, a Saturday night street race on the Las Vegas Strip."
+    },
+    {
+      "year": 2023,
+      "event": "Netherlands",
+      "displayName": "2023 Dutch Grand Prix",
+      "category": "home-race",
+      "featured": false,
+      "description": "Held at Circuit Zandvoort, Max Verstappen's home race. Verstappen won from pole in a rain-affected race that was red-flagged late for heavy rain."
+    },
+    {
+      "year": 2023,
+      "event": "Singapore",
+      "displayName": "2023 Singapore Grand Prix",
+      "category": "notable-result",
+      "featured": false,
+      "description": "Held on the Marina Bay Street Circuit. Carlos Sainz's win for Ferrari ended Red Bull's run of consecutive victories that season."
+    },
+    {
+      "year": 2024,
+      "event": "Monaco",
+      "displayName": "2024 Monaco Grand Prix",
+      "category": "classic-circuit",
+      "featured": true,
+      "description": "Held on the Circuit de Monaco street track. RaceIQ's first committed real analysis was generated from this race."
+    }
+  ]
+}

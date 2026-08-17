@@ -1,5 +1,10 @@
 /cache/
 
+# Python virtual environment created by scripts/build-race-library.ps1
+# (or manually per README) -- local execution environment only, never
+# committed. Recreate with: python -m venv .venv
+/.venv/
+
 # Node / Next.js (apps/web)
 node_modules/
 .next/

@@ -1,8 +1,13 @@
 @echo off
-REM Double-click this to generate a curated set of real, well-known
-REM races for a strong first demo. Safe to run any time -- races that
-REM fail just get skipped (printed at the end), nothing is committed
-REM automatically.
+REM Double-click this to generate the curated race library defined in
+REM data\race-manifest.json. Safe to run any time -- races that already
+REM have a valid analysis are skipped, and races that fail just get
+REM reported at the end; nothing is committed automatically.
+REM
+REM scripts\build-race-library.ps1 is the full Phase 1 entry point (venv
+REM setup, dependency install, generation, validation, tests, and
+REM build) -- this .bat is a lighter-weight generation-only shortcut for
+REM whoever prefers double-clicking over PowerShell.
 
 cd /d "%~dp0\.."
 

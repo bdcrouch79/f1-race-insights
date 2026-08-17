@@ -111,13 +111,60 @@ anywhere except `/api/subscribe`, which doesn't touch `fs` at all.
   network access to FastF1's data sources (`livetiming.formula1.com`, `api.jolpi.ca`/Ergast
   successor). This sandboxed build environment's egress policy denies both hosts (verified via
   `curl $HTTPS_PROXY/__agentproxy/status`, `connect_rejected` / 403), so no real analysis could be
-  generated here -- generation happens on Bryan's machine instead; see `docs/CURRENT_STATE.md`.
+  generated here -- generation happens on Bryan's machine instead, via
+  `scripts\build-race-library.ps1` (see "Race Library Engine" below and `docs/CURRENT_STATE.md`).
 - **Lead capture**: Next.js Route Handler (`apps/web/app/api/subscribe/route.ts`) calling Brevo's
   API server-side. `BREVO_API_KEY` is read at request time, so on Cloudflare it must be a Worker
   runtime secret (`wrangler secret put`), not a build-time env var -- `.github/workflows/
   deploy-cloudflare.yml` syncs it from the `BREVO_API_KEY` GitHub secret automatically once that
   secret exists. Neither the secret nor a verified Brevo list ID exist yet -- the route fails
   safely (503, no partial side effects) until they're configured.
+
+## Race Library Engine (curated generation pipeline)
+
+Generating races one at a time (`python scripts/generate_analysis.py <year> <event>`) still works
+and is what actually calls the engine, but choosing *which* races to generate, and doing it
+repeatably on a fresh machine, used to require reading this file and improvising. The Race Library
+Engine is the automation layer on top of that, added without touching `analysis/raceiq/` or the
+JSON contract:
+
+```text
+data/race-manifest.json  (curated list: year, event query, displayName, category, featured, description)
+        |
+        v
+scripts/generate_batch.py  (resolves each event via fastf1.get_event, skips valid existing files,
+        |                    continues past failures, prints a generated/skipped/failed summary)
+        v
+scripts/generate_analysis.py  (unchanged -- one real session -> one committed JSON artifact)
+        |
+        v
+scripts/validate_generated.py  (re-checks every committed file against raceiq.schemas.validate_analysis)
+```
+
+`scripts\build-race-library.ps1` is the Windows entry point that wraps all of this plus environment
+setup and the full check suite: create/reuse `.venv`, install `analysis/requirements.txt`,
+create/reuse `cache/`, run the manifest-driven generation (`-Force`, or `-Year`/`-Event` for one
+race), run JSON validation, run `pytest`, then run the frontend's test/typecheck/lint/build --
+printing one final per-stage PASS/FAIL/SKIP report. See `docs/CURRENT_STATE.md` for the exact
+command and what needs to be installed first.
+
+**Event resolution, not guessing.** A manifest entry's `event` field is a FastF1 lookup query
+(e.g. `"Monaco"`), not a promise that FastF1's official event name is exactly that string.
+`scripts/generate_batch.py` calls `fastf1.get_event(year, event)` -- a lightweight, schedule-only
+lookup -- *before* attempting a full session load, so a bad or unresolvable identifier fails fast
+with FastF1's own reason and the batch moves on to the next race, rather than guessing a slug and
+silently writing to the wrong path or crashing the run. The manifest deliberately does not store a
+predicted output slug: FastF1 resolves the real one at generation time, and a stored guess that
+turned out wrong would either mask itself or need constant upkeep. If a generation run reports
+success but the expected output file isn't where the script predicted, that specific race is
+reported as failed with an explicit message pointing at the mismatch -- not silently accepted.
+
+**Frontend join, same principle.** `apps/web/lib/raceManifest.ts` attaches a manifest entry's
+editorial metadata (category, featured flag, description) to a real generated race by matching
+`(year, the actual FastF1-resolved event.name)` -- never a predicted slug -- so a race whose
+official name turns out to differ from what was assumed when the manifest entry was written simply
+doesn't get a badge yet, instead of attaching the wrong one. This is additive: `ArchiveGrid` renders
+identically for any race with no manifest match.
 
 ## Caching
 

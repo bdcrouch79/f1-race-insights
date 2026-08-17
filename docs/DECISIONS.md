@@ -225,3 +225,67 @@ validates the complete asset bundle.
 remaining action is Bryan creating one Cloudflare API token and adding two GitHub repository
 secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`) -- see `docs/CURRENT_STATE.md` for the
 exact steps. Custom domain attachment remains a separate, explicit step after that.
+
+## 2026-08-17 -- Race Library Engine: manifest-driven generation, not a bigger hardcoded list
+
+**Constraint**: Bryan asked for Phase 1 of the RaceIQ recovery -- an automated local Race Library
+Engine -- scoped explicitly to: reuse the existing Python engine and JSON contract unchanged,
+add a version-controlled curated manifest of about 20 races, and give it a Windows PowerShell entry
+point (`scripts\build-race-library.ps1`) that a non-network-restricted machine can actually run. No
+website redesign, no Brevo configuration, no deployment, no new infrastructure.
+
+**Alternatives considered for the manifest-to-output join**: (1) have the manifest store a
+predicted output slug (derived by guessing FastF1's official event name, e.g. "Abu Dhabi" ->
+"abu-dhabi-grand-prix") and trust it; (2) have `scripts/generate_batch.py` resolve every event
+against FastF1's own schedule (`fastf1.get_event`) before generating, and never store a slug
+prediction in the manifest at all.
+
+**Selected approach**: option 2. A hand-guessed slug is fragile in exactly the way this repository
+has already been burned by once: `apps/web/tests/raceData.test.ts` documents that the existing
+`slugify()` turns `"São Paulo"` into `"s-o-paulo"`, not the more intuitive `"sao-paulo"`, because it
+strips non-ASCII characters as generic punctuation rather than transliterating them. Any 2021+
+Brazil/São Paulo manifest entry would hit this exact trap. Rather than hand-verify every predicted
+slug against a guess at FastF1's exact `EventName` string for each of 20 races with no network
+access to check, the manifest only stores the FastF1 *lookup query* (e.g. `"Monaco"`, not a slug),
+and `scripts/generate_batch.py` resolves it for real via `fastf1.get_event(year, event)` -- a
+lightweight, schedule-only call -- before attempting a full session load. If the resolved output
+path doesn't match what was predicted, that race is reported as a failure with an explicit
+diagnostic instead of silently accepting a name mismatch. The 20 chosen races deliberately avoid
+any event whose FastF1 name is known to contain a non-ASCII character (see
+`data/race-manifest.json`), sidestepping the `São Paulo` case entirely rather than exercising the
+untested edge of `slugify()`.
+
+**Manifest content sourcing**: every race description in `data/race-manifest.json` is a neutral,
+publicly documented historical fact (date, location, championship context, a widely reported
+on-track result) verified via web search during this change, not an analytical claim -- RaceIQ does
+not yet have real generated data for 19 of these 20 races, so nothing about pace, consistency, or
+degradation is claimed for them. This matches the repository's existing rule against unverified
+claims (`AGENTS.md`) extended to editorial copy, not just data-availability claims.
+
+**Windows PowerShell target**: `docs/CURRENT_STATE.md` already establishes that this sandboxed
+build environment's egress policy blocks FastF1's data hosts and that real generation happens on
+Bryan's machine (Windows, per `scripts/clean-cache.bat` and `scripts/generate-demo-set.bat`
+already being `.bat` files). `scripts\build-race-library.ps1` follows that existing precedent
+rather than introducing a cross-platform shell script Bryan would need something else to run.
+
+**What was and wasn't verified here**: this sandbox has neither FastF1 network access nor a
+PowerShell runtime, so `build-race-library.ps1` was written, manually syntax-reviewed (brace/paren
+balance, `Set-StrictMode`-safe collection counting, parameter validation via
+`$PSBoundParameters.ContainsKey` instead of a `[Nullable[int]]` type-resolution assumption this
+sandbox couldn't test), but not executed end to end. `scripts/generate_batch.py`'s control flow
+(manifest loading, `--year`/`--event` selection, the skip/force/resolve-failure/generation-failure/
+slug-mismatch branches) was exercised directly in this sandbox with `fastf1.get_event` and
+`subprocess.run` mocked out, which validates the logic without asserting anything about real FastF1
+data. Running `scripts/validate_generated.py` against the already-committed repository caught a
+real, pre-existing bug independent of any of this: `data/fixtures/demo-race.json` was still
+`analysisVersion "1.1.0"`, one version behind the engine's current `1.1.1` -- regenerated via the
+existing `scripts/generate_demo_fixture.py` (synthetic, no network) and now valid. See
+`docs/CURRENT_STATE.md` for the exact command Bryan runs to generate the other 19 real races.
+
+**Frontend change, deliberately additive**: `apps/web/lib/raceManifest.ts` plus a small
+`ArchiveGrid`/`archive/page.tsx` change render a race's manifest category, "Featured" badge, and
+description when a match exists, and change nothing about a race with no match. This is not a
+redesign -- no route, layout, or architecture changed; it decorates the existing archive cards using
+the same panel/badge patterns already in the file (the existing "Sample" badge). Covered by
+`apps/web/tests/raceManifest.test.ts` and confirmed against the real committed Monaco 2024 entry
+with a local `next start` + curl check (see `docs/CURRENT_STATE.md`).

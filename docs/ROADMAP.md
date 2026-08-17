@@ -18,8 +18,10 @@ needs its own explicit go-ahead.
 
 ## After Phase 1 -- candidate next steps, in rough priority order
 
-1. **Generate and commit the first real analyses.** Nothing after this matters until real data
-   exists. See `docs/CURRENT_STATE.md` for the exact blocker and command.
+1. ~~Build a repeatable local Race Library Engine.~~ Done -- `data/race-manifest.json` (20 curated
+   races, 2018-2024) plus `scripts\build-race-library.ps1`. **Generate and commit the real analyses
+   it produces** is still the next action: nothing after this matters until real data exists for
+   more than one race. See `docs/CURRENT_STATE.md` for the exact command.
 2. **Deploy the frontend and verify production behavior**, including the `opengraph-image` route's
    filesystem access on whichever platform is chosen (see the Cloudflare risk in
    `docs/ARCHITECTURE.md`).
@@ -27,9 +29,13 @@ needs its own explicit go-ahead.
 4. **Qualifying and sprint session support.** The contract and availability rules are already
    session-aware (`SUPPORTED_SESSIONS`); only the engine's session loading and the frontend
    selector need to expand.
-5. **A small, deliberately scoped set of additional historical races**, generated and reviewed one
-   at a time -- not a bulk pre-generation job. Each addition should be a decision, not a script run
-   against every season since 2018.
+5. ~~A small, deliberately scoped set of additional historical races.~~ Superseded by the Race
+   Library Engine (step 1): the curation decision now lives once, reviewably, in
+   `data/race-manifest.json` (20 races, still deliberately scoped -- not every season since 2018)
+   rather than being repeated as one-off script runs. Each race the manifest generates should still
+   be reviewed before committing (headline sanity, warnings) per the three real fixes recorded in
+   `docs/CURRENT_STATE.md`; growing the manifest further, or removing/replacing an entry, is still a
+   deliberate editorial decision, not a bulk operation to automate away.
 6. **A hosted Python analysis API or scheduled worker**, if and when that infrastructure is
    authorized, to reduce the manual generation step. This does not replace the versioned JSON
    contract or the commit-as-cache model; it would only change how a file gets generated.

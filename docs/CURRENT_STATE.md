@@ -1,8 +1,41 @@
 # RaceIQ Current State
 
-Last verified: 2026-08-16
+Last verified: 2026-08-17
 
 ## Implemented
+
+- **Race Library Engine (Phase 1 recovery, local, Windows entry point)**: a version-controlled
+  curated manifest of 20 notable races (`data/race-manifest.json`, 2018-2024, each with a FastF1
+  event query, display name, editorial category, featured flag, and a short neutral, publicly
+  sourced description -- see `docs/DECISIONS.md`) drives generation instead of a hardcoded list.
+  `scripts/generate_batch.py` was rewritten to be manifest-driven: it resolves each entry against
+  FastF1's own schedule (`fastf1.get_event`) before attempting a full session load, so a bad
+  identifier fails fast with FastF1's own reason instead of downloading anything; skips races that
+  already have a schema-valid committed analysis unless `--force` is passed; supports a single race
+  via `--year`/`--event`; never lets one race's failure stop the batch; and prints a final
+  generated/skipped/failed summary. `scripts/validate_generated.py` is new -- it re-validates every
+  committed `data/generated/` and `data/fixtures/` file against the existing
+  `raceiq.schemas.validate_analysis` contract (no duplicate validation logic). None of this touches
+  `analysis/raceiq/` (the engine) or its contract; `scripts/generate_analysis.py` is still the only
+  thing that actually calls `run_analysis`.
+  `scripts\build-race-library.ps1` is the new Windows entry point tying it together: creates/reuses
+  `.venv`, installs `analysis/requirements.txt`, creates/reuses `cache/`, runs the manifest-driven
+  generation, runs the new JSON validation script, runs `pytest`, then runs the frontend's
+  test/typecheck/lint/build -- and prints one final PASS/FAIL/SKIP report per stage. See "Race
+  Library Engine: how to run it" below for the exact command and what it needs installed.
+- **Manifest editorial metadata surfaced in the archive** (additive, no redesign):
+  `apps/web/lib/raceManifest.ts` reads `data/race-manifest.json` server-side and matches a real
+  generated race to its manifest entry by year + the actual FastF1-resolved event name (not a
+  predicted slug -- the manifest doesn't store one, since guessing it wrong would silently break the
+  join; see `docs/DECISIONS.md`). `apps/web/app/archive/page.tsx` looks up each generated race's
+  entry and `components/ArchiveGrid.tsx` renders its category, a "Featured" badge, and its
+  description when a match exists; a race with no manifest match (or not yet generated) renders
+  exactly as before. Covered by `apps/web/tests/raceManifest.test.ts`.
+- **Stale demo fixture fixed**: running the new `scripts/validate_generated.py` against the
+  already-committed repository immediately caught a real, pre-existing bug --
+  `data/fixtures/demo-race.json` was still `analysisVersion "1.1.0"`, one version behind the
+  engine's current `ANALYSIS_VERSION` ("1.1.1") after the 2026-08-16 decline-sign fix. Regenerated
+  via the existing `scripts/generate_demo_fixture.py` (synthetic, no network); now validates clean.
 
 - **Python analysis engine** (`analysis/raceiq/`): `engine.py`, `metrics.py`, `narrative.py`,
   `schemas.py`, `availability.py`. Refactored from the original `main.py` calculations into
@@ -56,18 +89,51 @@ Last verified: 2026-08-16
   synthetic fixtures, availability rules, schema validation, headline-eligibility filtering and
   the decline-sign fix mirroring real Monaco 2024 data exactly, one full `engine.run_analysis()`
   integration test against a monkeypatched FastF1 session).
+- `python scripts/validate_generated.py` -- 2/2 committed JSON files valid (the real Monaco 2024
+  analysis and the demo fixture) against `raceiq.schemas.validate_analysis`.
+- `python scripts/generate_batch.py` logic (manifest loading, `--year`/`--event` selection, the
+  skip-existing-valid-analysis check, and the generated/skipped/failed branches of `run_one()`)
+  exercised directly with mocked `fastf1.get_event`/`subprocess.run` calls in this sandbox, since
+  its own egress policy blocks FastF1's real hosts (see below) -- confirms the control flow (skip,
+  resolve-failure, generation-failure, slug-mismatch detection) behaves correctly without asserting
+  anything about real FastF1 data.
 - `cd apps/web && npm run typecheck` -- passes.
 - `cd apps/web && npx eslint .` -- passes (no errors).
-- `cd apps/web && npm run test` -- 35 passed across 10 files (components, data resolution, format
+- `cd apps/web && npm run test` -- 40 passed across 11 files (components, data resolution, format
   helpers, metadata generation, subscribe-route validation/fail-safe behavior, the social-card
-  eligibility filter, and a schema contract test against a real engine-generated fixture).
+  eligibility filter, a schema contract test against a real engine-generated fixture, and the new
+  race-manifest lookup test).
 - `cd apps/web && npm run build` -- production build succeeds; `/race/2024/monaco-grand-prix`
   statically generated alongside the demo route.
+- Server smoke check (`next start`, curled locally): `/archive` renders the "Featured" badge,
+  `classic circuit` category, and the manifest description for the real 2024 Monaco Grand Prix
+  entry, confirming the new `raceManifest.ts` join actually reaches the page, not just its test.
 - Manual browser verification (Playwright, desktop and mobile viewports) against `next start`:
   homepage, the demo race report, three successive real Monaco 2024 reports (one per fix), and the
   dynamic OG image (both demo and real, pre- and post-social-card fix) all rendered correctly,
   including the team-color swatches on summary cards. The final render was read carefully end to
   end -- headline text, warnings, full tables, and the social card -- and is internally consistent.
+  (Predates this change; not re-run here since nothing in this change touches the race-report route
+  itself.)
+
+## Race Library Engine: how to run it
+
+`scripts\build-race-library.ps1` is Windows-only (PowerShell) and requires real network access to
+FastF1's data sources, so it has been code-verified in this sandbox (see "Verified" above and
+`docs/DECISIONS.md`) but not actually executed end to end -- this sandbox's egress policy denies
+`livetiming.formula1.com`/`api.jolpi.ca`, and PowerShell itself isn't installed here to even run the
+script's syntax. Run it on Bryan's machine:
+
+```powershell
+.\scripts\build-race-library.ps1              # generate every manifest race not already committed
+.\scripts\build-race-library.ps1 -Year 2024 -Event Monaco   # one race (already committed; skips unless -Force)
+.\scripts\build-race-library.ps1 -Force        # regenerate every manifest race from scratch
+```
+
+Requires Python 3.11+ and Node.js 22 on `PATH` (the script tells you exactly what's missing and
+where to get it if either isn't found). Generates into `data/generated/raceiq/v1.1.1/<year>/<event
+slug>/R.json` -- review with `git status`/`git diff`, then `git add data/generated` (and
+`data/race-manifest.json` if you edited it) and commit; the script never commits anything itself.
 
 ## Real data status
 
@@ -85,6 +151,11 @@ reading the output rather than trusting the arithmetic:
    chart still derived its own unfiltered "top 5" from `paceRanking`, so Sargeant's bar still
    rendered as the fastest under text naming Hamilton -- fixed in
    `apps/web/lib/headlineEligibility.ts`; no further regeneration was needed for this one.
+
+**Still only one race** -- this change adds the manifest and the repeatable local pipeline
+(`scripts\build-race-library.ps1`) to generate the other 19 curated races, but does not itself add
+any new real analysis: this sandbox has no network access to FastF1's data sources (see "Race
+Library Engine: how to run it" above), so nothing beyond Monaco has actually been generated.
 
 ## Not verified / blocked
 
@@ -144,9 +215,15 @@ reading the output rather than trusting the arithmetic:
 ## Exact next action
 
 1. ~~Generate and commit at least one real race analysis.~~ Done: 2024 Monaco Grand Prix is
-   committed under `analysisVersion 1.1.1` and verified. Generate more races the same way
-   (`python scripts/generate_analysis.py <year> <event>`) whenever more coverage is wanted --
-   actually read the resulting summary before committing, per the three fixes above.
+   committed under `analysisVersion 1.1.1` and verified. ~~Build a repeatable local pipeline to
+   generate the rest of a curated set.~~ Done: `scripts\build-race-library.ps1` plus
+   `data/race-manifest.json` (20 curated races, 2018-2024) -- see "Race Library Engine: how to run
+   it" above. **Remaining**: Bryan runs `.\scripts\build-race-library.ps1` on a machine with real
+   network access, reads each race's summary before committing (per the three fixes above -- the
+   headline-eligibility and decline-sign filters exist because reading real output caught real
+   bugs), and commits `data/generated` once satisfied. Expect some manifest entries to fail or need
+   a corrected `event` query the first time -- FastF1's own resolution error (printed by the script)
+   says why; that's the intended fail-fast behavior, not a bug.
 2. ~~Build and verify Cloudflare deployment tooling.~~ Done -- see "Not verified / blocked" above.
    Remaining: Bryan creates the Cloudflare API token and adds the two GitHub secrets, then merges
    this branch (or triggers the workflow manually) to get a first live deploy on `*.workers.dev`.
