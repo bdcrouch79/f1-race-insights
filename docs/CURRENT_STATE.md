@@ -160,11 +160,17 @@ already-fixed v1.1.1 engine and were spot-checked in the browser during Phase 2 
 
 - **Frontend provider**: Cloudflare Workers, Worker `raceiq-web`. **Live** at
   `https://raceiq-web.bryan-7df.workers.dev` -- deployed automatically by
-  `.github/workflows/deploy-cloudflare.yml` on push to `main` (`CLOUDFLARE_API_TOKEN` and
-  `CLOUDFLARE_ACCOUNT_ID` are configured as GitHub repository secrets; confirmed via a successful
-  past workflow run, not assumed). This Phase 2 change follows the same path: merging to `main`
-  triggers a fresh automatic deploy, which this session verified against the live URL after merge
-  (see the verification note added below once that ran).
+  `.github/workflows/deploy-cloudflare.yml` on push to `main`. This Phase 2 change was merged to
+  `main` (PR #1) on 2026-08-17, which triggered workflow run `31988885854`: `npm run
+  typecheck`/`eslint`/`test`/`cf:build` all passed on GitHub's own runner (independent of this
+  session's local verification), then `Deploy to Cloudflare Workers` succeeded and produced a new
+  Worker version (`Current Version ID: 8618a611-fc56-4bc4-9406-5cf1d5652a4a`, distinct from Phase
+  1's `87ae1221-...`) at the URL above. **This session could not directly curl or browse that live
+  URL to confirm the served HTML** -- this sandbox's egress policy blocks `*.workers.dev`, the
+  same class of restriction already documented here for FastF1's data hosts. The deploy pipeline's
+  own success and the new version ID are real evidence that the new build is live; a direct
+  browser check of the public URL is the one verification step only Bryan (or a
+  network-unrestricted session) can complete.
 - **Production domain**: none attached yet (target: `raceiq.crouchdevelopment.com`; attaching it
   is a separate, deliberate step in the Cloudflare dashboard, not performed by the deploy
   workflow or by this change).
