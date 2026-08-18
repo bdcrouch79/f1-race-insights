@@ -1,9 +1,15 @@
 name: Deploy RaceIQ to Cloudflare
 
-# Deploys to the raceiq-web Worker's *.workers.dev subdomain only.
-# Attaching the raceiq.crouchdevelopment.com custom domain is a
-# separate, deliberate step -- not something this workflow does.
-# See docs/CURRENT_STATE.md for the exact remaining manual steps.
+# Deploys the raceiq-web Worker via `wrangler deploy`. The Worker itself
+# always answers at its *.workers.dev subdomain; the production custom
+# domain (raceiq.crouchdevelopment.com) is a Cloudflare-dashboard-side
+# routing attachment on top of the same Worker, not a separate deploy
+# target -- attaching/detaching it is a deliberate manual step this
+# workflow does not perform, but once attached (verified 2026-08-18,
+# see docs/DECISIONS.md) every deploy here reaches it automatically.
+# This workflow verifies both: the workers.dev URL as the underlying
+# infrastructure check (decoupled from DNS/custom-domain routing), and
+# the custom domain as the actual public production check.
 
 on:
   push:
@@ -130,3 +136,87 @@ jobs:
             fi
             sleep 10
           done
+
+      # Phase 3, Part 1: the workers.dev check above verifies the Worker
+      # itself; this verifies the actual public production domain visitors
+      # use, since a healthy Worker and a correctly routed custom domain
+      # are two different things (DNS, the Cloudflare custom-domain
+      # attachment, and certificate provisioning can each fail
+      # independently of the Worker deploy). See docs/DECISIONS.md
+      # (2026-08-18).
+      - name: Verify the production custom domain (homepage, archive, a race report, sitemap, robots, canonical/OG metadata)
+        run: |
+          BASE="https://raceiq.crouchdevelopment.com"
+          fail=0
+
+          check_200() {
+            local label="$1" url="$2"
+            local status
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$url" || echo "000")
+            if [ "$status" != "200" ]; then
+              echo "::error::$label ($url) returned HTTP $status instead of 200."
+              fail=1
+            else
+              echo "OK: $label -> 200"
+            fi
+          }
+
+          HOME_BODY=$(curl -s "$BASE/" || echo "")
+          HOME_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/" || echo "000")
+          HOME_CARDS=$(printf '%s' "$HOME_BODY" | grep -o "View Report" | wc -l | tr -d ' ')
+          if [ "$HOME_STATUS" != "200" ] || [ "$HOME_CARDS" -eq 0 ]; then
+            echo "::error::Custom domain homepage ($BASE/) returned HTTP $HOME_STATUS with $HOME_CARDS race card(s)."
+            fail=1
+          else
+            echo "OK: homepage -> 200 with $HOME_CARDS race card(s)"
+          fi
+
+          check_200 "archive" "$BASE/archive"
+          check_200 "sitemap" "$BASE/sitemap.xml"
+          check_200 "robots" "$BASE/robots.txt"
+
+          SITEMAP_BODY=$(curl -s "$BASE/sitemap.xml" || echo "")
+          SITEMAP_URL_COUNT=$(printf '%s' "$SITEMAP_BODY" | grep -o "<loc>" | wc -l | tr -d ' ')
+          if [ "$SITEMAP_URL_COUNT" -lt 5 ]; then
+            echo "::error::Sitemap only lists $SITEMAP_URL_COUNT URL(s) -- expected the 4 static pages plus 20 real races."
+            fail=1
+          elif printf '%s' "$SITEMAP_BODY" | grep -q "workers.dev"; then
+            echo "::error::Sitemap contains a workers.dev URL -- it must only list the production custom domain."
+            fail=1
+          else
+            echo "OK: sitemap lists $SITEMAP_URL_COUNT URL(s), no workers.dev references"
+          fi
+
+          FIRST_RACE_PATH=$(printf '%s' "$SITEMAP_BODY" | grep -o "<loc>[^<]*/race/[^<]*</loc>" | head -1 | sed -E 's#<loc>https?://[^/]+##; s#</loc>##')
+          if [ -z "$FIRST_RACE_PATH" ]; then
+            echo "::error::Could not find any /race/<year>/<event> URL in the sitemap to spot-check."
+            fail=1
+          else
+            REPORT_BODY=$(curl -s "$BASE$FIRST_RACE_PATH" || echo "")
+            REPORT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE$FIRST_RACE_PATH" || echo "000")
+            if [ "$REPORT_STATUS" != "200" ] || ! printf '%s' "$REPORT_BODY" | grep -qi "What Decided The Race"; then
+              echo "::error::Race report $FIRST_RACE_PATH returned HTTP $REPORT_STATUS or was missing expected content."
+              fail=1
+            else
+              echo "OK: race report $FIRST_RACE_PATH -> 200 with real content"
+            fi
+            if ! printf '%s' "$REPORT_BODY" | grep -q "rel=\"canonical\" href=\"$BASE"; then
+              echo "::error::Race report $FIRST_RACE_PATH's canonical URL does not point at $BASE."
+              fail=1
+            else
+              echo "OK: race report canonical URL points at $BASE"
+            fi
+            if ! printf '%s' "$REPORT_BODY" | grep -q "property=\"og:url\" content=\"$BASE"; then
+              echo "::error::Race report $FIRST_RACE_PATH's og:url does not point at $BASE."
+              fail=1
+            else
+              echo "OK: race report og:url points at $BASE"
+            fi
+            check_200 "race report OG image" "$BASE${FIRST_RACE_PATH}/opengraph-image"
+          fi
+
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::One or more production custom-domain checks failed -- see above."
+            exit 1
+          fi
+          echo "All production custom-domain checks passed."

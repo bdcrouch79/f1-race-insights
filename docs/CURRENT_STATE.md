@@ -1,8 +1,62 @@
 # RaceIQ Current State
 
-Last verified: 2026-08-17
+Last verified: 2026-08-18
 
 ## Implemented
+
+### Phase 3: RaceIQ Launch and Social Content Engine (2026-08-18)
+
+With the P0 fix verified and the custom domain live, Bryan asked for RaceIQ to become a reusable
+social-media campaign engine that drives qualified attention to RaceIQ and Crouch Development,
+without expanding the F1 analysis product itself. Summary:
+
+- **Production-domain reconciliation**: the app's own `SITE_URL` (canonical URLs, sitemap, OG
+  metadata, robots) has used `raceiq.crouchdevelopment.com` since Phase 1/2 already -- no frontend
+  URL code changed. `deploy-cloudflare.yml` gained a dedicated custom-domain post-deploy check
+  (homepage card count, archive, a real race report's status/content/canonical/`og:url`, an OG
+  image, and a sitemap that lists only the custom domain, never `workers.dev`) so every future
+  deploy re-verifies the actual public domain, not just the Worker's own subdomain. See "Deployment
+  state" above.
+- **Analytics**: determined Cloudflare Web Analytics' automatic setup (one dashboard click, zero
+  code) is the correct path, and that its standard beacon only measures pageviews/performance --
+  Cloudflare's own docs confirm custom named events (filter use, CTA clicks, share-button clicks)
+  are not supported. Added an inert, code-owned manual-beacon fallback
+  (`NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN`) in `apps/web/app/layout.tsx` in case Bryan prefers that
+  path. See `docs/GROWTH.md` for the exact dashboard action and what is/isn't measurable.
+- **Social Content Engine** (`scripts/generate_race_content.py`, wrapped by
+  `scripts\build-race-content.ps1`): given a year and event query, reads the already-committed
+  analysis JSON and manifest (no FastF1, no network, no LLM, no new analytical metric) and
+  generates a deterministic content package -- five social post drafts, a `content-manifest.json`
+  with an explicit claim-to-source trace for every factual statement, and three matplotlib insight-
+  card PNGs in the RaceIQ palette (pace, consistency, closing-pace-heuristic, each clearly labeled
+  as a distinct metric). Verified deterministic: re-running against the same committed inputs
+  produces byte-identical text and images. Generated the first real package for 2021 Abu Dhabi
+  Grand Prix into `content/generated/2021-abu-dhabi-grand-prix/`.
+- **On-site sharing** (`components/ShareBar.tsx`, replacing the old `ShareButton.tsx`): copy link,
+  share-intent links to LinkedIn and X, and a "Download graphic" link that only renders for a race
+  with a generated insight card (`apps/web/lib/contentCards.ts`, fed by a `build-data.mjs` step
+  that copies `content/generated/**/insight-card-pace.png` into `apps/web/public/content-cards/` --
+  same static-import-at-build-time architecture as the rest of the app, no runtime filesystem
+  access). No auth, no social APIs, no server-side posting.
+- **Crouch Development integration**: added one entry for RaceIQ to `bdcrouch79/cd`'s
+  `/systems` page ("Better Reporting" group, alongside Search Signal), using the exact positioning
+  copy Bryan specified, linking to `https://raceiq.crouchdevelopment.com`. No new systems section,
+  page, or nav entry -- `/systems` was already the correct, established surface for this. See
+  `bdcrouch79/cd`'s `docs/DECISIONS.md` (2026-08-18).
+- **Launch package** (`scripts/generate_launch_content.py` -> `content/launch/`): selected 2021 Abu
+  Dhabi Grand Prix as the launch race -- manifest-featured, category `title-decider`, and the exact
+  race named in Bryan's own example command, with strong, verified RaceIQ findings (pace,
+  consistency, and closing-pace evidence, all traceable to the committed analysis). Generated the
+  founder-story arc (Python experiment -> production platform -> 20 real races) across LinkedIn,
+  Facebook, Instagram, X, a video outline, and a suggested publishing sequence.
+- **What was explicitly not built**: no new races, no qualifying/sprint support, no hosted Python
+  API, no on-demand analysis, no authentication, no payments, no database, no AI chat, no Weekend
+  Brief/Brevo work, no new analytical metrics, and no general-purpose social scheduler -- all
+  reused only fields the Python engine already computed and validated.
+
+See "Deployment state" and "Exact next action" below for what verification is still outstanding
+(a human/network-unrestricted browser check of the production domain, and enabling Cloudflare Web
+Analytics).
 
 ### P0 fix: deployed Worker rendered zero races (2026-08-17)
 
@@ -230,29 +284,44 @@ already-fixed v1.1.1 engine and were spot-checked in the browser during Phase 2 
 
 ## Deployment state
 
-- **Frontend provider**: Cloudflare Workers, Worker `raceiq-web`. **Live** at
-  `https://raceiq-web.bryan-7df.workers.dev` -- deployed automatically by
-  `.github/workflows/deploy-cloudflare.yml` on push to `main`. This Phase 2 change was merged to
-  `main` (PR #1) on 2026-08-17, which triggered workflow run `31988885854`: `npm run
-  typecheck`/`eslint`/`test`/`cf:build` all passed on GitHub's own runner (independent of this
-  session's local verification), then `Deploy to Cloudflare Workers` succeeded and produced a new
-  Worker version (`Current Version ID: 8618a611-fc56-4bc4-9406-5cf1d5652a4a`, distinct from Phase
-  1's `87ae1221-...`) at the URL above. **This session could not directly curl or browse that live
-  URL to confirm the served HTML** -- this sandbox's egress policy blocks `*.workers.dev`, the
-  same class of restriction already documented here for FastF1's data hosts. The deploy pipeline's
-  own success and the new version ID are real evidence that the new build is live; a direct
-  browser check of the public URL is the one verification step only Bryan (or a
-  network-unrestricted session) can complete. **This description predates the 2026-08-17 P0 fix**
-  (see above) -- that fix has not yet merged/redeployed as of this writing, so the live Worker at
-  this URL is still the broken (zero-races) build until the P0 fix's own deploy completes and is
-  verified per "Exact next action" item 4 below.
-- **Production domain**: none attached yet (target: `raceiq.crouchdevelopment.com`; attaching it
-  is a separate, deliberate step in the Cloudflare dashboard, not performed by the deploy
-  workflow or by this change).
+- **Frontend provider**: Cloudflare Workers, Worker `raceiq-web`, deployed automatically by
+  `.github/workflows/deploy-cloudflare.yml` on push to `main`.
+- **Underlying infrastructure URL**: `https://raceiq-web.bryan-7df.workers.dev`. This is the
+  Worker's own subdomain -- it always exists and always answers regardless of custom-domain
+  routing, which is exactly why `deploy-cloudflare.yml`'s first post-deploy check targets it
+  directly (see docs/DECISIONS.md, 2026-08-17). Not the public-facing URL; documented here only as
+  underlying infrastructure, per Phase 3's domain-reconciliation requirement.
+- **Production domain**: `https://raceiq.crouchdevelopment.com`, attached in the Cloudflare
+  dashboard (Worker Settings -> Domains & Routes -> Add Custom Domain) and reported
+  production-verified by Bryan as of 2026-08-18. The application itself has used this domain as its
+  `SITE_URL` (canonical URLs, sitemap, OG metadata, robots) since Phase 1/2 -- see
+  `apps/web/app/layout.tsx`, `sitemap.ts`, `robots.ts`, and the race report page -- so no frontend
+  code changed for the domain reconciliation; the P0 fix (below) and this domain attachment were
+  the two things actually keeping it from serving correctly. `deploy-cloudflare.yml` now also runs
+  a dedicated custom-domain post-deploy check (homepage card count, archive, a real race report's
+  200 status and content, canonical/`og:url` metadata pointing at this domain, an OG image, and a
+  sitemap that lists only this domain, never `workers.dev`) on every future deploy -- this is real,
+  repeatable evidence from GitHub's own network, not a one-time manual claim.
+- **P0 fix (runtime `fs` -> static import, `dynamicParams` fix) is merged and deployed**: PR #3
+  merged 2026-08-17; the redeploy after the follow-up retry-loop fix (PR #4) passed on the first
+  attempt -- Worker version `d83c7deb-2ca1-4577-b740-a533d82cf353` served 20 real race cards on the
+  homepage, confirmed via GitHub's own network. See docs/DECISIONS.md for the full incident
+  writeup.
+- **This session still cannot directly curl or browse either URL** -- this sandbox's egress policy
+  blocks both `*.workers.dev` and `crouchdevelopment.com` (confirmed again this session:
+  `connect_rejected`, HTTP 403 via `$HTTPS_PROXY/__agentproxy/status`), the same class of
+  restriction already documented here for FastF1's data hosts. The new custom-domain post-deploy
+  check in CI is this session's best available evidence; a direct human browser check remains the
+  final outstanding verification step for this phase (see "Exact next action").
 - **Analysis provider**: none (precomputed artifacts committed to this repository).
 - **Email**: `BREVO_API_KEY` is not configured, so `/api/subscribe` still fails safely with HTTP
   503 if called directly. This is now moot for real visitors in the default flow -- the Weekend
   Brief form is not rendered anywhere in Phase 2's public UI (see above).
+- **Analytics**: Cloudflare Web Analytics is not confirmed enabled from this session (no API tool
+  available to query zone-level Web Analytics state, and the dashboard itself is unreachable from
+  here). `apps/web/app/layout.tsx` includes an inert, code-owned manual beacon activation path
+  (renders nothing unless `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set) as a secondary option. See
+  `docs/GROWTH.md` for the one-time dashboard action, what is and is not measurable, and why.
 
 ## Bryan OS registration
 
@@ -263,21 +332,23 @@ already-fixed v1.1.1 engine and were spot-checked in the browser during Phase 2 
 ## Exact next action
 
 1. ~~Generate and commit the curated race library.~~ Done -- all 20 races are real and committed.
-2. ~~Deploy the frontend.~~ Done -- `raceiq-web` is live on `*.workers.dev` and auto-deploys on
-   push to `main`.
+2. ~~Deploy the frontend.~~ Done -- `raceiq-web` is live and auto-deploys on push to `main`.
 3. ~~Rebuild the showcase experience (Phase 2).~~ Done -- see above.
-4. **Manually verify the deployed `https://raceiq-web.bryan-7df.workers.dev` URL directly** after
-   this P0 fix merges and `deploy-cloudflare.yml` redeploys: hero shows 20 races, a featured race,
-   20 race cards, populated season/category/driver filters, at least three real race reports return
-   200 with content, the archive is populated, an OG image route returns 200, and the sitemap lists
-   every race URL. This sandbox's egress policy blocks `*.workers.dev` (same restriction already
-   documented for FastF1's hosts), so this session cannot complete this step itself -- it requires
-   Bryan or a network-unrestricted session. **This fix is not considered complete until this check
-   happens** -- see `docs/DECISIONS.md` (2026-08-17).
-5. Attach the `raceiq.crouchdevelopment.com` custom domain once Bryan is ready for it to be the
-   public-facing URL (Cloudflare dashboard: the Worker's Settings -> Domains & Routes -> Add
-   Custom Domain). Not done as part of this change -- it's a deliberate, separate step per
-   `docs/ARCHITECTURE.md`.
-6. When Bryan explicitly decides to resume the Weekend Brief: create the Brevo list, sender, and
+4. ~~Fix the P0 zero-races production bug.~~ Done -- confirmed via automated evidence (20 real
+   cards on the homepage, GitHub's own network). See `docs/DECISIONS.md` (2026-08-17).
+5. ~~Attach the `raceiq.crouchdevelopment.com` custom domain.~~ Done -- reported production-verified
+   by Bryan 2026-08-18. `deploy-cloudflare.yml`'s new custom-domain check (added this phase)
+   provides ongoing automated confirmation on every future deploy.
+6. **A human (or a network-unrestricted session) should still directly browse
+   `https://raceiq.crouchdevelopment.com`** at least once and confirm: hero shows 20 races, a
+   featured race, populated season/category/driver filters, and social-share links (LinkedIn, X,
+   copy link) work as expected on a real race report. This sandbox's egress policy blocks
+   `crouchdevelopment.com` entirely (confirmed again this session), so this is evidence only a
+   human browser check or an unrestricted session can add on top of the automated CI checks above.
+7. Enable Cloudflare Web Analytics for `raceiq.crouchdevelopment.com` (and `crouchdevelopment.com`
+   if not already on) via the dashboard's one-click automatic setup -- see `docs/GROWTH.md` for the
+   exact steps and what becomes measurable. Not done from this session (no dashboard access, no API
+   tool for zone-level Web Analytics state).
+8. When Bryan explicitly decides to resume the Weekend Brief: create the Brevo list, sender, and
    attributes; add `BREVO_API_KEY` as a GitHub secret; and re-render `WeekendBriefForm` in a
-   follow-up change. Not started -- out of scope for Phase 2 by explicit instruction.
+   follow-up change. Not started -- out of scope for this phase by explicit instruction.

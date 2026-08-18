@@ -23,6 +23,11 @@ cloudflare-env.d.ts
 # docs/DECISIONS.md (2026-08-17).
 /apps/web/data/
 
+# Build-time copy of content/generated/**/insight-card-pace.png (written by
+# apps/web/scripts/build-data.mjs) -- not source, never committed. The real
+# insight cards live at the repo root under /content/generated/.
+/apps/web/public/content-cards/
+
 # Python
 __pycache__/
 *.pyc
