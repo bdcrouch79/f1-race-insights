@@ -4,7 +4,7 @@ import { AvailabilityBadges } from "@/components/AvailabilityBadges";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { SampleDataBanner } from "@/components/SampleDataBanner";
-import { ShareButton } from "@/components/ShareButton";
+import { ShareBar } from "@/components/ShareBar";
 import { TeamSwatch } from "@/components/TeamSwatch";
 import { WhatDecidedTheRace } from "@/components/WhatDecidedTheRace";
 import { ChartCard } from "@/components/ChartCard";
@@ -12,6 +12,7 @@ import { ConsistencyChart } from "@/components/charts/ConsistencyChart";
 import { DegradationChart } from "@/components/charts/DegradationChart";
 import { LapEvolutionChart } from "@/components/charts/LapEvolutionChart";
 import { PaceChart } from "@/components/charts/PaceChart";
+import { contentCardUrl, hasContentCard } from "@/lib/contentCards";
 import { buildDriverInfo } from "@/lib/driverInfo";
 import { DEMO_FIXTURE_ROUTE, listGeneratedAnalyses, resolveAnalysis } from "@/lib/raceData";
 
@@ -134,7 +135,11 @@ export default async function RaceReportPage({ params }: PageProps) {
               {analysis.event.date ? ` · ${analysis.event.date}` : ""}
             </p>
           </div>
-          <ShareButton url={canonicalUrl} title={`${analysis.event.name} — RaceIQ`} />
+          <ShareBar
+            url={canonicalUrl}
+            title={`${analysis.event.name} — RaceIQ`}
+            imageUrl={hasContentCard(year, event) ? contentCardUrl(year, event) : undefined}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <AvailabilityBadges availability={analysis.availability} />

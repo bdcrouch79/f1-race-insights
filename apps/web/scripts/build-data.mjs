@@ -52,6 +52,8 @@ const GENERATED_ROOT = path.join(REPO_ROOT, "data", "generated", "raceiq");
 const MANIFEST_PATH = path.join(REPO_ROOT, "data", "race-manifest.json");
 const DEMO_FIXTURE_PATH = path.join(REPO_ROOT, "data", "fixtures", "demo-race.json");
 const CD_MARK_PATH = path.join(REPO_ROOT, "assets", "cd-mark.png");
+const CONTENT_GENERATED_ROOT = path.join(REPO_ROOT, "content", "generated");
+const PUBLIC_CONTENT_CARDS_DIR = path.join(APP_ROOT, "public", "content-cards");
 
 /** Compare two "analysisVersion" strings (e.g. "1.10.0" > "1.9.0") -- plain string sort gets this wrong. */
 function compareVersions(a, b) {
@@ -111,6 +113,44 @@ function buildGeneratedRaces() {
   );
 }
 
+/**
+ * scripts/generate_race_content.py (the RaceIQ Social Content Engine,
+ * see docs/DECISIONS.md) writes a committed insight-card PNG per race
+ * under content/generated/<year>-<eventSlug>/insight-card-pace.png. This
+ * copies the featured card into apps/web/public/content-cards/ (a plain
+ * static asset OpenNext ships as-is, no runtime fs) and records which
+ * races have one, so the on-site "Download insight graphic" sharing
+ * control (components/ShareBar.tsx) can link to it -- and simply not
+ * render for a race that doesn't have one yet, since not every one of
+ * the 20 races has content generated. Same architecture as everything
+ * else in this file: read committed source once at build time, never at
+ * request time.
+ */
+function buildContentCards() {
+  const withCard = [];
+  if (!fs.existsSync(CONTENT_GENERATED_ROOT)) return withCard;
+
+  for (const dirName of fs.readdirSync(CONTENT_GENERATED_ROOT)) {
+    const dirPath = path.join(CONTENT_GENERATED_ROOT, dirName);
+    if (!fs.statSync(dirPath).isDirectory()) continue;
+
+    const manifestPath = path.join(dirPath, "content-manifest.json");
+    const cardPath = path.join(dirPath, "insight-card-pace.png");
+    if (!fs.existsSync(manifestPath) || !fs.existsSync(cardPath)) continue;
+
+    const manifest = readJson(manifestPath);
+    const { year, eventSlug } = manifest.race ?? {};
+    if (!year || !eventSlug) continue;
+
+    const destDir = path.join(PUBLIC_CONTENT_CARDS_DIR, String(year), eventSlug);
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.copyFileSync(cardPath, path.join(destDir, "insight-card-pace.png"));
+    withCard.push({ year: String(year), eventSlug });
+  }
+
+  return withCard.sort((a, b) => (a.year === b.year ? a.eventSlug.localeCompare(b.eventSlug) : Number(a.year) - Number(b.year)));
+}
+
 function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -140,6 +180,12 @@ function main() {
   }
   fs.writeFileSync(path.join(OUT_DIR, "cd-mark.json"), JSON.stringify({ dataUri: cdMarkDataUri }, null, 2) + "\n");
   console.log("RaceIQ build-data: wrote Crouch Development mark data URI -> apps/web/data/cd-mark.json");
+
+  const contentCards = buildContentCards();
+  fs.writeFileSync(path.join(OUT_DIR, "content-cards.json"), JSON.stringify(contentCards, null, 2) + "\n");
+  console.log(
+    `RaceIQ build-data: copied ${contentCards.length} insight card(s) -> apps/web/public/content-cards/, wrote apps/web/data/content-cards.json`,
+  );
 }
 
 main();

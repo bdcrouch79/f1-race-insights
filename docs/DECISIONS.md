@@ -474,3 +474,106 @@ propagating" from "actually broken," so it isn't trustworthy as a gate either wa
 loop that retries every 10s for up to 90s and only fails the workflow if the real content still
 isn't there by the deadline, and now also logs the `cf-cache-status` response header on every
 attempt for diagnosis. This is a workflow-robustness fix, not a rollback of anything above.
+
+## 2026-08-18 -- Phase 3: RaceIQ Launch and Social Content Engine
+
+**Constraint**: with the P0 fix verified and the custom domain (`raceiq.crouchdevelopment.com`)
+live, Bryan asked for RaceIQ to become a reusable social-media campaign engine for RaceIQ and
+Crouch Development, explicitly scoped to not expand the F1 analysis product itself, never call an
+LLM, never fabricate a conclusion, and never introduce a new analytical metric.
+
+**Domain reconciliation was mostly already done**: `apps/web`'s `SITE_URL` constants (canonical
+URLs, sitemap, OG metadata, robots) have pointed at `raceiq.crouchdevelopment.com` since Phase 1/2
+-- verified by grepping the whole frontend for `workers.dev`, which only matched
+`deploy-cloudflare.yml`'s deliberate infrastructure-level post-deploy check, docs, and one test
+fixture URL (already correct). The actual remaining work was adding a real, repeatable check of the
+*public* domain (not just the Worker's own subdomain) to the deploy workflow -- see the new
+"Verify the production custom domain" step in `deploy-cloudflare.yml`, which checks homepage card
+count, archive, a real race report's status/content, canonical/`og:url` metadata pointing at the
+custom domain, an OG image, and that the sitemap lists only the custom domain, never `workers.dev`.
+
+**Analytics: researched before building anything, not assumed**. This session has no Cloudflare
+API tool for zone-level Web Analytics state and no dashboard access, so "is it already enabled"
+could not be answered directly -- documented as an open question for Bryan rather than guessed.
+More importantly, Cloudflare's own FAQ (`developers.cloudflare.com/web-analytics/faq/`) confirms
+Web Analytics does not support custom named events ("Not yet, but we may add support for this in
+the future") -- it measures pageviews and performance only. Bryan's requested event list (filter
+use, CTA clicks, share-button clicks) is therefore **not measurable** with Cloudflare Web Analytics
+alone, and the repository's own constraints (no database, no third-party analytics platform, no
+custom dashboard) rule out building a substitute. Decision: document this limitation explicitly
+(`docs/GROWTH.md`) rather than build fake instrumentation or silently ship nothing; recommend
+Cloudflare's one-click "Automatic Setup" (zero code) as the primary path since the zone is already
+proxied through Cloudflare; add an inert, code-owned manual-beacon fallback in
+`apps/web/app/layout.tsx` (renders nothing unless `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set) as a
+secondary path that needs one environment variable, not a redeploy, once a token exists.
+
+**Social Content Engine is Python, not a Next.js route, and lives in this repository, not
+`bryan-content-engine`**. `bdc-os/docs/CONTENT_ENGINE.md` describes a planned (not yet built),
+separate execution repository for Bryan's voice-driven, LLM-research-backed content across his
+personal/ministry brands (five-hook selection, Scripture-reference rules, YouTube packaging) --
+fundamentally incompatible with this task's explicit requirement to never call an LLM or fabricate
+anything. `scripts/generate_race_content.py` (wrapped by `scripts\build-race-content.ps1`, matching
+the existing `build-race-library.ps1` convention: create/reuse `.venv`, install
+`analysis/requirements.txt`, no network access required) reads only the already-committed,
+schema-valid `data/generated/raceiq/**/R.json` and `data/race-manifest.json` and:
+
+- Resolves a `(year, event query)` pair to a committed analysis file by mirroring
+  `apps/web/lib/raceManifest.ts`'s exact substring/alias matching rule (kept in sync via a comment
+  pointing at that file), and mirrors `apps/web/lib/headlineEligibility.ts`'s
+  `MIN_HEADLINE_SAMPLE_RATIO` filter for any "top N" it re-derives from a raw ranking table -- the
+  same eligibility-filtering discipline already established for the frontend (see the 2026-08-16
+  entries above) and required so a driver with an unrepresentative quick-lap sample can't dominate
+  a bar chart or a "led average pace" claim.
+- Never claims a driver "won" the race in any generated text: RaceIQ's analysis contract has no
+  finishing-position/results field at all (pace, consistency, and closing-pace evidence only), so
+  no claim about winning could ever be traceable to the committed data. This is a hard rule in the
+  script, not a per-post judgment call.
+- Writes a `content-manifest.json` alongside every package with an explicit `claims` array mapping
+  every factual statement in the generated text to the exact JSON field it came from -- built for
+  the requirement that every claim be traceable and independently verifiable.
+- Renders three insight-card PNGs via `matplotlib` (already a declared, installed dependency) using
+  the exact hex palette `opengraph-image.tsx` already uses, with no team logos, driver photos, or
+  any official F1/FIA/team/sponsor/circuit imagery -- only text, geometric bars, and real per-season
+  team colors (the same "color is factual data, not a trademarked graphic" reasoning already
+  established for `TeamSwatch`/the OG image, see 2026-08-16 above).
+- Is deterministic: re-running against the same committed inputs was verified (via `md5sum`) to
+  produce byte-identical PNGs and text, aside from the content-manifest's own generation timestamp.
+
+Generated the first real package for 2021 Abu Dhabi Grand Prix (`content/generated/2021-abu-dhabi-
+grand-prix/`) -- chosen because it's manifest-featured, category `title-decider`, and the exact
+race Bryan's own example command named.
+
+**On-site sharing** (`components/ShareBar.tsx`) replaces `components/ShareButton.tsx` (deleted,
+unused elsewhere, no tests referenced it) with four controls: copy link, a LinkedIn share-intent
+link, an X share-intent link, and a "Download graphic" link. The download link is conditional --
+`apps/web/lib/contentCards.ts` checks a static-imported `data/content-cards.json` (written by a new
+`build-data.mjs` step that copies `content/generated/**/insight-card-pace.png` into
+`apps/web/public/content-cards/`, gitignored, same build-time-only architecture as everything else
+in that file -- no runtime filesystem access) -- so the button simply doesn't render for one of the
+19 races that doesn't have generated content yet, rather than linking to a missing file.
+
+**Crouch Development integration**: inspected `bdcrouch79/cd` before changing anything --
+`src/app/systems/page.tsx` (`/systems`) already exists as exactly the "custom-systems surface" this
+task asked for, with a "Better Reporting" group containing Search Signal (a close sibling: "turns
+raw ... behavior into ranked opportunities"). Added one RaceIQ entry there using Bryan's exact
+positioning copy, rather than building a new systems page or duplicating the homepage's separate
+"Products And Proof" section. See `bdcrouch79/cd`'s own `docs/DECISIONS.md` (2026-08-18).
+
+**Launch package** (`scripts/generate_launch_content.py` -> `content/launch/`) reuses the same
+fact-building and eligibility-filtering functions as the per-race content engine (imported, not
+duplicated) for the same 2021 Abu Dhabi Grand Prix, with launch-specific narrative templates
+following Bryan's requested arc: RaceIQ started as a Python experiment, is now a production
+intelligence platform, processes thousands of timing records into evidence, and the public can
+explore 20 real races -- plus a `launch-sequence.md` suggesting a manual publishing order across
+the six files.
+
+**Explicitly not built**, per Bryan's own list: no new races, no qualifying/sprint support, no
+hosted Python API, no on-demand analysis, no authentication, no payments, no database, no AI chat,
+no Weekend Brief/Brevo work, no new analytical metrics, and no general-purpose social scheduler.
+
+**Consequences**: no change to `ANALYSIS_VERSION`, the Python engine's contract, or any committed
+`data/generated/**` file. `content/generated/` and `content/launch/` are new, real, committed
+artifacts (not build output) -- they are the actual deliverable, reviewed and posted manually by
+Bryan. This phase is not considered complete until a human or network-unrestricted session directly
+verifies both production domains (`raceiq.crouchdevelopment.com` and `crouchdevelopment.com`) --
+see `docs/CURRENT_STATE.md`.

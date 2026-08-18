@@ -1,0 +1,51 @@
+{
+  "canonicalUrl": "https://raceiq.crouchdevelopment.com/race/2021/abu-dhabi-grand-prix",
+  "claims": [
+    {
+      "source": "summary.fastestAveragePaceDriver + evidence[metric=averagePace]",
+      "statement": "Max Verstappen led average quick-lap race pace at 87.936s/lap"
+    },
+    {
+      "source": "summary.mostConsistentDriver + evidence[metric=consistency]",
+      "statement": "Mick Schumacher was the most consistent driver (stdev 0.639s across quick laps)"
+    },
+    {
+      "source": "summary.strongestLateRaceDriver",
+      "statement": "Lando Norris had the strongest closing quick-lap pace"
+    },
+    {
+      "source": "summary.largestPaceDeclineDriver == null (see warnings)",
+      "statement": "No eligible driver's closing quick-lap pace was slower than their opening pace this session, so RaceIQ did not name a largest-pace-decline headline."
+    }
+  ],
+  "files": [
+    "insight-card-closing.png",
+    "insight-card-consistency.png",
+    "insight-card-pace.png",
+    "instagram-caption.md",
+    "linkedin-data.md",
+    "linkedin-personal.md",
+    "short-video-outline.md",
+    "x-thread.md"
+  ],
+  "generatedAt": "2026-08-18T00:37:04.467130+00:00",
+  "manifest": {
+    "category": "title-decider",
+    "displayName": "2021 Abu Dhabi Grand Prix",
+    "featured": true,
+    "matched": true
+  },
+  "race": {
+    "circuit": "Yas Island",
+    "date": "2021-12-12 13:00:00",
+    "eventName": "Abu Dhabi Grand Prix",
+    "eventSlug": "abu-dhabi-grand-prix",
+    "session": "R",
+    "year": 2021
+  },
+  "source": {
+    "analysisFile": "data/generated/raceiq/v1.1.1/2021/abu-dhabi-grand-prix/R.json",
+    "analysisGeneratedAt": "2026-08-17T01:47:46.008832+00:00",
+    "analysisVersion": "1.1.1"
+  }
+}

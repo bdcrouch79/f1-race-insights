@@ -40,6 +40,19 @@ export const metadata: Metadata = {
   },
 };
 
+// Cloudflare Web Analytics's own pageview-only beacon (no code change
+// required at all) is the primary path -- see docs/GROWTH.md for the
+// one-time dashboard step. This manual snippet is a secondary,
+// code-owned activation path that only exists if Bryan sets
+// NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN as a Worker environment variable
+// after creating a Web Analytics site in the Cloudflare dashboard (the
+// token itself is not a secret -- it's a public per-site identifier
+// Cloudflare's own docs recommend embedding directly in HTML). Renders
+// nothing when unset, which is the default, so this is inert until
+// Bryan opts in. See docs/GROWTH.md for exactly what this does and does
+// not measure.
+const CF_WEB_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
@@ -47,6 +60,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        {CF_WEB_ANALYTICS_TOKEN ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: CF_WEB_ANALYTICS_TOKEN })}
+          />
+        ) : null}
       </body>
     </html>
   );

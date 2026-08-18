@@ -280,6 +280,55 @@ Brevo -- not a rebuild.
   Worker has no incremental-cache binding configured -- see "Static routing and the Cloudflare
   incremental cache" above), including for routes not in `generateStaticParams`.
 
+## Social Content Engine (Phase 3)
+
+A build-time-only Python tool, independent of the Next.js app, that turns an already-committed
+race analysis into a social-media content package. Reuses the analysis contract; never talks to
+the frontend, FastF1, or an LLM.
+
+```text
+data/generated/raceiq/v{version}/{year}/{eventSlug}/R.json  (committed, already schema-valid)
+data/race-manifest.json                                     (committed editorial metadata)
+        |
+        v
+scripts/generate_race_content.py  (resolves year+event query -> analysis file, mirroring
+        |                          raceManifest.ts's alias/substring rule; mirrors
+        |                          headlineEligibility.ts's MIN_HEADLINE_SAMPLE_RATIO filter;
+        |                          never claims a driver "won" -- the contract has no results field)
+        v
+content/generated/{year}-{eventSlug}/
+    linkedin-personal.md, linkedin-data.md, instagram-caption.md,
+    x-thread.md, short-video-outline.md          (deterministic string templates)
+    insight-card-pace.png, insight-card-consistency.png,
+    insight-card-closing.png                     (matplotlib, RaceIQ hex palette, no logos)
+    content-manifest.json                        (every claim mapped to its exact source field)
+```
+
+`scripts\build-race-content.ps1` is the Windows entry point (mirrors `build-race-library.ps1`'s
+venv-management convention). `scripts/generate_launch_content.py` imports the same fact-building
+functions (not duplicated) to produce `content/launch/` -- a one-time launch campaign for a single
+selected race, with its own narrative templates.
+
+**Feeding the frontend back**: `apps/web/scripts/build-data.mjs` scans
+`content/generated/*/content-manifest.json`, copies each race's `insight-card-pace.png` into
+`apps/web/public/content-cards/{year}/{eventSlug}/` (a plain static asset, gitignored, regenerated
+every build), and writes `apps/web/data/content-cards.json` listing which races have one.
+`apps/web/lib/contentCards.ts` static-imports that list (same no-runtime-fs architecture as the
+rest of `apps/web/data/`) so `components/ShareBar.tsx`'s "Download graphic" control can check
+availability without touching the filesystem at request time.
+
+**On-site sharing** (`components/ShareBar.tsx`, race report pages only): copy-link (clipboard),
+LinkedIn and X share-intent links (`https://www.linkedin.com/sharing/share-offsite/?url=...`,
+`https://twitter.com/intent/tweet?...`), and the conditional download link above. All four are
+plain client-side links/clipboard calls -- no auth, no social platform API calls, no server-side
+posting.
+
+**Analytics**: no dedicated event pipeline. Cloudflare Web Analytics (pageviews/performance only,
+enabled via the Cloudflare dashboard, not this repository) is the whole analytics surface -- see
+`docs/GROWTH.md` for exactly what that does and does not cover, and why nothing was built to
+capture filter/CTA/share-click events (Cloudflare Web Analytics has no custom-event support, and
+this repository's constraints rule out a substitute).
+
 ## Testing strategy
 
 - Python: `analysis/tests/` -- synthetic fixtures for metric math, availability rules, schema
