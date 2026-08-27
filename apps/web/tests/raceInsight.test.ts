@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { buildDriverInfo } from "@/lib/driverInfo";
-import { findEvidence, getPrimaryInsight, getTakeaways, pickFeaturedRace, type LibraryRaceEntry } from "@/lib/raceInsight";
+import {
+  findEvidence,
+  getLibraryCardMetric,
+  getPrimaryInsight,
+  getTakeaways,
+  pickFeaturedRace,
+  type LibraryRaceEntry,
+} from "@/lib/raceInsight";
 import type { RaceAnalysis } from "@/lib/schema";
 
 function buildAnalysis(overrides: Partial<RaceAnalysis> = {}): RaceAnalysis {
@@ -76,6 +83,22 @@ describe("getPrimaryInsight", () => {
     });
     const drivers = buildDriverInfo(analysis.drivers);
     expect(getPrimaryInsight(analysis, drivers)).toBe("3 drivers analyzed across the full race distance.");
+  });
+});
+
+describe("getLibraryCardMetric", () => {
+  it("varies the leading metric by editorial race category", () => {
+    const analysis = buildAnalysis();
+    const drivers = buildDriverInfo(analysis.drivers);
+    expect(getLibraryCardMetric(analysis, drivers, "high-speed-circuit").label).toBe("Pace Leader");
+    expect(getLibraryCardMetric(analysis, drivers, "title-decider").label).toBe("Most Consistent");
+    expect(getLibraryCardMetric(analysis, drivers, "wet-weather").label).toBe("Strongest Finish");
+  });
+
+  it("keeps every displayed value traceable to summary evidence", () => {
+    const analysis = buildAnalysis();
+    const drivers = buildDriverInfo(analysis.drivers);
+    expect(getLibraryCardMetric(analysis, drivers, "title-decider").value).toContain("0.412s spread");
   });
 });
 
