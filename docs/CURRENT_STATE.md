@@ -1,8 +1,19 @@
 # RaceIQ Current State
 
-Last verified: 2026-08-18
+Last verified: 2026-08-27
 
 ## Implemented
+
+### Experimental positioning clarification (2026-08-27)
+
+- The homepage hero now identifies RaceIQ as an **Experimental Data Lab** before the primary
+  product promise.
+- The notice states plainly that RaceIQ is an ongoing Crouch Development experiment and not a
+  finished commercial product, while preserving its role as a working demonstration of turning
+  raw data into clear, interactive evidence.
+- This is a positioning-only change. The analysis engine, generated race data, application
+  architecture, routes, and deployment target are unchanged.
+
 
 ### Phase 3: RaceIQ Launch and Social Content Engine (2026-08-18)
 
