@@ -20,7 +20,7 @@
       "displayName": "2018 Singapore Grand Prix",
       "category": "street-circuit",
       "featured": false,
-      "description": "A night race on the Marina Bay Street Circuit."
+      "description": "Lewis Hamilton converted pole into victory under the lights after producing one of the season's defining qualifying laps."
     },
     {
       "year": 2018,
@@ -28,7 +28,7 @@
       "displayName": "2018 Brazilian Grand Prix",
       "category": "classic-circuit",
       "featured": false,
-      "description": "Held at Interlagos in Sao Paulo, Brazil."
+      "description": "Lewis Hamilton won at Interlagos after Max Verstappen lost the lead in a collision with the lapped Esteban Ocon."
     },
     {
       "year": 2018,
@@ -36,7 +36,7 @@
       "displayName": "2018 Abu Dhabi Grand Prix",
       "category": "season-finale",
       "featured": false,
-      "description": "The final round of the 2018 season, held at Yas Marina Circuit."
+      "description": "Lewis Hamilton closed his championship-winning season with victory at Yas Marina in Fernando Alonso's final race before his first retirement."
     },
     {
       "year": 2019,
@@ -44,7 +44,7 @@
       "displayName": "2019 German Grand Prix",
       "category": "wet-weather",
       "featured": false,
-      "description": "Held at Hockenheimring in wet and changeable conditions."
+      "description": "Max Verstappen survived spins, safety cars, and constantly changing conditions to win a chaotic afternoon at Hockenheim."
     },
     {
       "year": 2019,
@@ -60,7 +60,7 @@
       "displayName": "2019 Italian Grand Prix",
       "category": "high-speed-circuit",
       "featured": false,
-      "description": "Held at Monza, one of the highest average-speed circuits on the Formula 1 calendar."
+      "description": "Charles Leclerc held off both Mercedes drivers to deliver Ferrari's first Italian Grand Prix victory since 2010."
     },
     {
       "year": 2019,
@@ -68,7 +68,7 @@
       "displayName": "2019 Azerbaijan Grand Prix",
       "category": "street-circuit",
       "featured": false,
-      "description": "Held on the Baku City Circuit street track."
+      "description": "Valtteri Bottas converted pole into victory as Mercedes opened the season with a fourth consecutive one-two finish."
     },
     {
       "year": 2020,
@@ -116,7 +116,7 @@
       "displayName": "2021 Saudi Arabian Grand Prix",
       "category": "new-circuit",
       "featured": false,
-      "description": "The inaugural Formula 1 race on the Jeddah Corniche Circuit, held at night."
+      "description": "The first Saudi Arabian Grand Prix featured two red flags, repeated clashes between the title rivals, and a Lewis Hamilton victory."
     },
     {
       "year": 2022,
@@ -140,7 +140,7 @@
       "displayName": "2023 Las Vegas Grand Prix",
       "category": "new-circuit",
       "featured": true,
-      "description": "The inaugural Formula 1 Las Vegas Grand Prix, a Saturday night street race on the Las Vegas Strip."
+      "description": "Formula 1 returned to Las Vegas with a Saturday-night race in which Charles Leclerc passed Sergio Perez for second on the final lap."
     },
     {
       "year": 2023,
@@ -164,7 +164,7 @@
       "displayName": "2024 Monaco Grand Prix",
       "category": "classic-circuit",
       "featured": true,
-      "description": "Held on the Circuit de Monaco street track. RaceIQ's first committed real analysis was generated from this race."
+      "description": "Charles Leclerc won his home Grand Prix for the first time after converting pole position into a controlled Monaco victory."
     }
   ]
 }
