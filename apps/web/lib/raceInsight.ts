@@ -63,6 +63,78 @@ export function getPrimaryInsight(analysis: RaceAnalysis, drivers: DriverInfo): 
   return `${analysis.drivers.length} drivers analyzed across the full race distance.`;
 }
 
+export interface LibraryCardMetric {
+  label: string;
+  value: string;
+  driverCode: string | null;
+}
+
+const CONSISTENCY_CATEGORIES = new Set(["classic-circuit", "season-finale", "street-circuit", "title-decider"]);
+const CLOSING_CATEGORIES = new Set(["close-battle", "notable-result", "wet-weather"]);
+
+/**
+ * A compact evidence-backed metric for a library card. Editorial category
+ * determines which lens leads so the library does not repeat the same pace
+ * sentence twenty times. Every value still comes from summary + evidence.
+ */
+export function getLibraryCardMetric(
+  analysis: RaceAnalysis,
+  drivers: DriverInfo,
+  category?: string,
+): LibraryCardMetric {
+  const { summary, evidence } = analysis;
+
+  const consistency = () => {
+    const item = findEvidence(evidence, "consistency", summary.mostConsistentDriver);
+    return item
+      ? {
+          label: "Most Consistent",
+          value: `${nameFor(drivers, summary.mostConsistentDriver)} · ${item.value.toFixed(3)}s spread`,
+          driverCode: summary.mostConsistentDriver,
+        }
+      : null;
+  };
+
+  const closing = () => {
+    const item = findEvidence(evidence, "degradation", summary.strongestLateRaceDriver);
+    if (!item) return null;
+    const result = item.value < 0 ? `${Math.abs(item.value).toFixed(3)}s/lap gained` : "best late-race pace";
+    return {
+      label: "Strongest Finish",
+      value: `${nameFor(drivers, summary.strongestLateRaceDriver)} · ${result}`,
+      driverCode: summary.strongestLateRaceDriver,
+    };
+  };
+
+  const pace = () => {
+    const item = findEvidence(evidence, "averagePace", summary.fastestAveragePaceDriver);
+    return item
+      ? {
+          label: "Pace Leader",
+          value: `${nameFor(drivers, summary.fastestAveragePaceDriver)} · ${item.value.toFixed(3)}s/lap`,
+          driverCode: summary.fastestAveragePaceDriver,
+        }
+      : null;
+  };
+
+  const preferred = CLOSING_CATEGORIES.has(category ?? "")
+    ? closing()
+    : CONSISTENCY_CATEGORIES.has(category ?? "")
+      ? consistency()
+      : pace();
+
+  return (
+    preferred ??
+    pace() ??
+    consistency() ??
+    closing() ?? {
+      label: "RaceIQ Analysis",
+      value: `${analysis.drivers.length} drivers analyzed`,
+      driverCode: null,
+    }
+  );
+}
+
 export interface Takeaway {
   id: string;
   text: string;
