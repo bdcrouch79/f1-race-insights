@@ -4,6 +4,16 @@ Last verified: 2026-08-27
 
 ## Implemented
 
+### Story-first race library cards (2026-08-27)
+
+- Race-library tiles now lead with each event's distinct historical hook instead of repeating the
+  same average-pace sentence across every race.
+- Each tile retains a compact, evidence-backed RaceIQ metric. The editorial race category selects
+  pace leader, most consistent driver, or strongest finish so the library presents multiple
+  analytical lenses without inventing any new metric.
+- Nine thin manifest descriptions were strengthened with neutral, event-specific historical facts.
+  The race reports, analysis engine, generated data, and metric definitions are unchanged.
+
 ### Experimental positioning clarification (2026-08-27)
 
 - The homepage hero now identifies RaceIQ as an **Experimental Data Lab** before the primary
