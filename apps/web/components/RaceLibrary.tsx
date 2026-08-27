@@ -7,7 +7,7 @@ import { AvailabilityBadges } from "@/components/AvailabilityBadges";
 import { TeamSwatch } from "@/components/TeamSwatch";
 import { buildDriverInfo } from "@/lib/driverInfo";
 import { driverLabel } from "@/lib/format";
-import { getPrimaryInsight, type LibraryRaceEntry } from "@/lib/raceInsight";
+import { getLibraryCardMetric, type LibraryRaceEntry } from "@/lib/raceInsight";
 
 const ALL = "all";
 
@@ -146,8 +146,8 @@ export function RaceLibrary({ entries }: { entries: LibraryRaceEntry[] }) {
 
 function RaceLibraryCard({ entry }: { entry: LibraryRaceEntry }) {
   const drivers = buildDriverInfo(entry.analysis.drivers);
-  const insight = getPrimaryInsight(entry.analysis, drivers);
-  const leader = drivers[entry.analysis.summary.fastestAveragePaceDriver ?? ""];
+  const metric = getLibraryCardMetric(entry.analysis, drivers, entry.category);
+  const metricDriver = drivers[metric.driverCode ?? ""];
 
   return (
     <li>
@@ -176,12 +176,19 @@ function RaceLibraryCard({ entry }: { entry: LibraryRaceEntry }) {
           </span>
         ) : null}
 
-        <p className="flex items-start gap-1.5 text-sm text-riq-white">
-          <TeamSwatch driver={leader} />
-          {insight}
-        </p>
+        {entry.description ? (
+          <p className="text-sm leading-6 text-riq-gray">{entry.description}</p>
+        ) : null}
 
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto border-t riq-divider pt-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-riq-cyan">{metric.label}</p>
+          <p className="mt-1 flex items-start gap-1.5 text-sm text-riq-white">
+            <TeamSwatch driver={metricDriver} />
+            {metric.value}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
           <AvailabilityBadges availability={entry.analysis.availability} />
         </div>
         <span className="text-xs font-medium uppercase tracking-wide text-riq-cyan">View Report &rarr;</span>
